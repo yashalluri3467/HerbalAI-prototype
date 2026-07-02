@@ -8,6 +8,5 @@ pydantic
 pillow
 python-multipart
 matplotlib
-tensorflow
 requests
 python-dotenv
