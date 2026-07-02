@@ -1,8 +1,5 @@
 fastapi
-uvicorn
-torch
-torchvision
-opencv-python-headless
+uvicorn[standard]
 numpy
 pydantic
 pillow
@@ -10,3 +7,7 @@ python-multipart
 matplotlib
 requests
 python-dotenv
+opencv-python-headless
+torch --extra-index-url https://download.pytorch.org/whl/cpu
+torchvision --extra-index-url https://download.pytorch.org/whl/cpu
+tensorflow-cpu
