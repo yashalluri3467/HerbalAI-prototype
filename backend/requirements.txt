@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi
 uvicorn[standard]
 numpy
@@ -8,6 +9,6 @@ matplotlib
 requests
 python-dotenv
 opencv-python-headless
-torch --extra-index-url https://download.pytorch.org/whl/cpu
-torchvision --extra-index-url https://download.pytorch.org/whl/cpu
-tensorflow-cpu
+torch
+torchvision
+tensorflow
