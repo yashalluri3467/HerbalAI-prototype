@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uvicorn main:app --reload --port 8000)",
+      "Bash(npm run *)",
+      "Bash(timeout 30 uvicorn main:app --port 8000 --host 127.0.0.1)"
+    ]
+  }
+}

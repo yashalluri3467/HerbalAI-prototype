@@ -1,3 +1,28 @@
+<<<<<<< HEAD
+# Pycache
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Env
+venv/
+.venv/
+env/
+
+# Datasets & Models
+backend/data/
+backend/temp_dataset/
+weights/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env*.local
+
+# OS
+.DS_Store
+=======
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +241,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+>>>>>>> a26170bb0ac154514438e4452282677e617626dc
