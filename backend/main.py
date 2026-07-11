@@ -1,5 +1,6 @@
 import base64
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -90,9 +91,18 @@ async def _persist_session(
             await db.commit()
     except Exception as exc:  # pragma: no cover - persistence must never break API
         logger.warning("Failed to persist session record: %s", exc)
+# Allowed CORS origins for the frontend. Defaults to "*" (any origin) when
+# FRONTEND_URL is unset so local/dev and the Vercel frontend both work. Set
+# FRONTEND_URL on Render (comma-separated) to restrict to specific origins.
+_frontend_urls = os.getenv("FRONTEND_URL", "").strip()
+allow_origins = (
+    [u.strip() for u in _frontend_urls.split(",") if u.strip()]
+    if _frontend_urls
+    else ["*"]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
