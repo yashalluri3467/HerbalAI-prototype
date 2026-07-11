@@ -37,7 +37,6 @@ MANIFEST
 # Datasets & Temp files
 backend/data/
 backend/temp_dataset/
-backend/datasets/
 
 # Frontend
 frontend/node_modules/
