@@ -143,8 +143,7 @@ tempCodeRunnerFile.py
 .claude/
 
 # Extra / benchmark model directories
-backend/models/skin_disease_efficientnetb0/
-backend/models/skin_disease_mobilenetv2/
+# (all models are now tracked)
 
 # Weights (old PyTorch models)
 backend/weights/

@@ -1,0 +1,12 @@
+{
+  "dataset": "skin_disease",
+  "out_name": "skin_disease_mobilenetv2",
+  "backbone": "mobilenetv2",
+  "image_size": 160,
+  "device": "CPU",
+  "num_classes": 22,
+  "total_params": 2286166,
+  "accuracy": 0.4458,
+  "macro_f1": 0.4376,
+  "weighted_f1": 0.4493
+}
