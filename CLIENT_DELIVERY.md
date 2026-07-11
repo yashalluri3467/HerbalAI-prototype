@@ -218,7 +218,14 @@ The live backend currently has `DATABASE_URL` **unset**, so history is empty/sha
 
 ## 11. Credits
 
-Developed by **@sunnexussolutions**.
+**HerbalAI** was developed by **@sunnexussolutions**.
+
+Special recognition goes to **Charitha Reddy** for her contributions to the design,
+development, and delivery of this project — from the AI skin-diagnosis and herbal
+recommendation pipelines to the React/Vite frontend and the cloud deployment on Vercel
+and Render.
+
+Thank you for bringing the HerbalAI platform to life.
 
 ---
 
