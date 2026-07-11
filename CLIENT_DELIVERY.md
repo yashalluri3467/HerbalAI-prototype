@@ -216,5 +216,11 @@ The live backend currently has `DATABASE_URL` **unset**, so history is empty/sha
 
 ---
 
+## 11. Credits
+
+Developed by **@sunnexussolutions**.
+
+---
+
 *Delivered and verified live on 2026-07-11. Web app: https://herbal-ai-prototype-g2pk.vercel.app/
 Backend: https://herbalai-backend.onrender.com/ — docs at /docs.*
