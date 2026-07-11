@@ -1,0 +1,10 @@
+node_modules/
+dist/
+
+# VCS / editor / agent dirs
+.git/
+.vs/
+.vscode/
+.idea/
+.claude/
+.agents/

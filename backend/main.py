@@ -1,16 +1,20 @@
 import base64
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
 import cv2
 import numpy as np
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy import desc, select
 from starlette.concurrency import run_in_threadpool
 
+from database.db import DB_ENABLED, get_db, init_db, SessionLocal
+from database.models import SessionRecord
 from database.knowledge_base import get_all_herbs, get_herb_by_name
 from services.recommender import RecommenderService
 from services.tf_predictor import available_datasets as tf_available
@@ -22,11 +26,70 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("HerbalAI")
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if DB_ENABLED:
+        await init_db()
+        logger.info("Session-history database initialized")
+    else:
+        logger.warning("DATABASE_URL not set - session history will NOT be persisted")
+    yield
+
+
 app = FastAPI(
     title="Ayurvedic Skin Diagnosis & Herbal Recommendation System API",
     description="Dataset-trained image classification with optional knowledge-base and LLM support",
     version="2.0.0",
+    lifespan=lifespan,
 )
+
+
+async def _persist_session(
+    session_type: str,
+    response: dict,
+    image: Optional[str] = None,
+    dataset: Optional[str] = None,
+) -> None:
+    """Best-effort persistence of a prediction as a session record.
+
+    Failures are logged and swallowed so a DB issue never breaks a prediction.
+    """
+    if not DB_ENABLED or SessionLocal is None:
+        return
+    try:
+        predicted_class = (
+            response.get("disease")
+            or response.get("herb")
+            or response.get("predicted_class")
+        )
+        confidence = (
+            response.get("confidence_score")
+            or response.get("confidence")
+            or response.get("disease_confidence")
+        )
+        status = response.get("classification_status") or response.get(
+            "leaf_classification_status"
+        )
+        async with SessionLocal() as db:
+            db.add(
+                SessionRecord(
+                    session_type=session_type,
+                    dataset=dataset,
+                    predicted_class=predicted_class,
+                    confidence=confidence,
+                    status=status,
+                    top_predictions=response.get("top_predictions")
+                    or response.get("all_probabilities"),
+                    recommendations=response.get("recommendations"),
+                    llm_summary=response.get("llm_summary"),
+                    image=image,
+                    meta=response,
+                )
+            )
+            await db.commit()
+    except Exception as exc:  # pragma: no cover - persistence must never break API
+        logger.warning("Failed to persist session record: %s", exc)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -150,7 +213,7 @@ async def predict_skin(file: UploadFile = File(...)):
             )
             llm_error = None if llm_summary else llm_service.get_last_error()
 
-        return {
+        response_payload = {
             "disease": disease,
             "confidence_score": confidence,
             "top_predictions": top_predictions(result),
@@ -168,6 +231,8 @@ async def predict_skin(file: UploadFile = File(...)):
             "llm_error": llm_error,
             "llm_disclaimer": llm_service.LLM_DISCLAIMER if llm_summary else None,
         }
+        await _persist_session("skin", response_payload, image=response_payload.get("original_image"))
+        return response_payload
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
@@ -198,7 +263,7 @@ async def predict_leaf(file: UploadFile = File(...)):
             )
             llm_error = None if llm_summary else llm_service.get_last_error()
 
-        return {
+        response_payload = {
             "herb": herb_name or "Uncertain leaf",
             "confidence_score": result["confidence"],
             "top_predictions": top_predictions(result),
@@ -217,6 +282,8 @@ async def predict_leaf(file: UploadFile = File(...)):
             "llm_error": llm_error,
             "llm_disclaimer": llm_service.LLM_DISCLAIMER if llm_summary else None,
         }
+        await _persist_session("leaf", response_payload, image=response_payload.get("original_image"))
+        return response_payload
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
@@ -255,7 +322,7 @@ async def predict_joint(
             if evaluation and herb:
                 explanation = dataset_explanation(evaluation, herb)
 
-        return {
+        response_payload = {
             "disease": disease,
             "disease_confidence": skin_result["confidence"],
             "disease_top_predictions": top_predictions(skin_result),
@@ -272,6 +339,12 @@ async def predict_joint(
             "evaluation": evaluation,
             "explanation": explanation,
         }
+        await _persist_session(
+            "joint",
+            response_payload,
+            image=response_payload.get("skin_original"),
+        )
+        return response_payload
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
@@ -289,14 +362,49 @@ async def tf_predict_endpoint(dataset_name: str, file: UploadFile = File(...)):
     try:
         image_bytes = await file.read()
         result = tf_predict(dataset_name, image_bytes)
-        return {
+        response_payload = {
             "dataset": dataset_name,
             "predicted_class": result["predicted_class"],
             "confidence": result["confidence"],
             "all_probabilities": result["all_probs"],
         }
+        await _persist_session("tf", response_payload, dataset=dataset_name)
+        return response_payload
     except FileNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except Exception as error:
         logger.exception("Dataset prediction failed for %s", dataset_name)
         raise HTTPException(status_code=500, detail=str(error)) from error
+
+
+@app.get("/api/sessions")
+async def get_sessions(limit: int = 50, offset: int = 0, db=Depends(get_db)):
+    """Return persisted diagnosis sessions, newest first."""
+    if not DB_ENABLED:
+        return {"sessions": [], "db_enabled": False}
+    rows = (
+        await db.execute(
+            select(SessionRecord)
+            .order_by(desc(SessionRecord.created_at))
+            .limit(limit)
+            .offset(offset)
+        )
+    ).scalars().all()
+    sessions = [
+        {
+            "id": r.id,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "session_type": r.session_type,
+            "dataset": r.dataset,
+            "predicted_class": r.predicted_class,
+            "confidence": r.confidence,
+            "status": r.status,
+            "top_predictions": r.top_predictions,
+            "recommendations": r.recommendations,
+            "llm_summary": r.llm_summary,
+            "image": r.image,
+            "meta": r.meta,
+        }
+        for r in rows
+    ]
+    return {"sessions": sessions, "db_enabled": True}

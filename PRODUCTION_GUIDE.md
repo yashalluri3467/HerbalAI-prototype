@@ -107,11 +107,20 @@ Deploy the backend with the `.env` configuration in `backend/` (copy from `.env.
 OPENROUTER_API_KEY=your_key_here
 OPENROUTER_MODEL=openrouter/auto
 
+# Session-history database (OPTIONAL — leave empty to disable persistence)
+# Async SQLAlchemy URL, e.g. postgresql+asyncpg://USER:PASS@HOST/DB?ssl=require
+DATABASE_URL=
+
 # Feature toggles
 KNOWLEDGE_BASE_ENABLED=true
 LLM_SUGGESTIONS_ENABLED=true
 IMAGE_ENHANCEMENT_ENABLED=true
 ```
+
+> The session-history store (`backend/database/`) records every diagnosis to Postgres.
+> Tables are created automatically on startup. If `DATABASE_URL` is empty the app runs
+> without persistence and predictions are unaffected. In Kubernetes the same value is fed
+> via the `herbalai-secrets` `database-url` key (see `k8s/secret.yaml`).
 
 Start the server (e.g. on Render, CPU instances):
 

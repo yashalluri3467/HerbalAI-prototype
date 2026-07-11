@@ -99,3 +99,15 @@ export async function predictTf(datasetName, file) {
   }
   return response.json();
 }
+
+// ---------------------------------------------------------------------------
+// Session history (persisted in the database)
+// ---------------------------------------------------------------------------
+
+export async function fetchSessions(limit = 50, offset = 0) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/sessions?limit=${limit}&offset=${offset}`
+  );
+  if (!response.ok) throw new Error('Failed to fetch session history');
+  return response.json();
+}

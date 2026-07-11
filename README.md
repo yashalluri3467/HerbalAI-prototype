@@ -49,6 +49,20 @@ no Grad-CAM in the current pipeline.
 
 ---
 
+## 🗄️ Session History & Database
+
+Every diagnosis (skin, leaf, joint, or raw TF prediction) can be **persisted** to a database
+so the history survives refreshes and is shared across sessions. The UI's
+**Diagnostic Session History** tab (`/api/sessions`) reads from it automatically.
+
+- **Backend**: `backend/database/db.py` (async SQLAlchemy engine) + `backend/database/models.py`
+  (`SessionRecord`). Tables are created idempotently on startup — no migration tooling needed.
+- **Graceful degradation**: if `DATABASE_URL` is unset, persistence is **disabled** and
+  predictions still succeed; the frontend falls back to a local in-browser log.
+- **Enable it**: set `DATABASE_URL` to an async SQLAlchemy URL, e.g.
+  `postgresql+asyncpg://USER:PASS@HOST/DB?ssl=require` (managed Postgres / Neon). See
+  `backend/.env.example`.
+
 ## 🚀 Running the Platform
 
 ### 1. Set Up the Backend

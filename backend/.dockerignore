@@ -1,0 +1,30 @@
+# Virtual environments / local
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+.env.*
+
+# Large gitignored datasets (models are committed and intentionally included)
+data/
+temp_dataset/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Node (frontend deps should never be in the backend context)
+node_modules/
+dist/
+
+# Editor / tooling / VCS / agent dirs
+.vs/
+.vscode/
+.idea/
+.git/
+.claude/
+.agents/

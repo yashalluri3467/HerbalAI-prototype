@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    # Published so the interactive API docs are reachable at http://localhost:8000/docs
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter/auto}
+      # Empty by default -> session-history persistence disabled (safe standby).
+      - DATABASE_URL=${DATABASE_URL:-}
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -9,3 +9,7 @@ requests
 python-dotenv
 opencv-python-headless
 tensorflow
+
+# Session history persistence (Neon Postgres)
+sqlalchemy[asyncio]
+asyncpg

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  # ClusterIP only: the frontend's nginx proxies /api -> http://backend:8000,
+  # which resolves via this Service inside the cluster.
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - port: 8000
+      targetPort: 8000
