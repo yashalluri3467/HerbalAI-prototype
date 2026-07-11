@@ -77,11 +77,11 @@ def generate_diagnosis_summary(disease: str, herbs: list) -> str:
     prompt = (
         f"The patient has been diagnosed with '{disease}' by our AI skin analysis model. "
         f"Knowledge-base-backed information about the recommended herbs: {herbs_block}. "
-        f"Provide a concise summary (4-5 sentences) that: "
-        f"1) Briefly explains what {disease} is, "
-        f"2) Why these specific herbs are beneficial for it based ONLY on the provided information, "
-        f"3) Any general Ayurvedic lifestyle advice for this condition. "
-        f"Do not invent properties not listed above."
+        f"Provide a short, reasonable summary in 1-2 sentences that: "
+        f"1) briefly explains what {disease} is, "
+        f"2) says why these herbs are helpful for it based only on the provided facts, "
+        f"3) avoids inventing any properties not listed above. "
+        f"Do not use markdown formatting."
     )
 
     payload = {
@@ -130,8 +130,8 @@ def generate_leaf_summary(herb: str) -> str:
         f"The identified herb is '{herb}' (botanical name: {herb_data.get('botanical_name', '')}). "
         f"Known active compounds: {compounds}. Phytochemicals: {phyto}. "
         f"Documented benefits: {benefits}. Evidence level: {herb_data.get('evidence_level', '')}. "
-        f"Write a 3-4 sentence, strictly factual summary using ONLY the information above; "
-        f"do not invent properties. Mention typical preparation: {herb_data.get('preparation_method', '')}."
+        f"Write a short, reasonable summary in 1-2 sentences using ONLY the information above. "
+        f"Do not invent properties. Mention typical preparation: {herb_data.get('preparation_method', '')}."
     )
 
     payload = {
