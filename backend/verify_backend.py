@@ -6,50 +6,51 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("VerifyBackend")
 
 def verify():
-    logger.info("Starting verification of Ayurvedic AI backend components...")
-    
-    # 1. Check imports
+    logger.info("Starting verification of HerbalAI backend components...")
+
+    # 1. Check core dependencies
     try:
         import fastapi
         import uvicorn
-        import torch
         import cv2
         import numpy as np
-        import matplotlib
         logger.info("Successfully imported all core third-party dependencies.")
     except ImportError as e:
         logger.error(f"Dependency import failed: {e}")
         sys.exit(1)
-        
-    # 2. Check local modules
+
+    # 2. Check local modules (live TensorFlow stack only)
     try:
-        from database.knowledge_base import get_all_herbs, get_recommendations_for_disease
-        from models.classifiers import SkinConditionClassifier, HerbClassifier
-        from models.gradcam import GradCAM
-        from utils.prep import preprocess_image_pipeline
+        from database.knowledge_base import get_all_herbs
         from services.recommender import RecommenderService
-        from services.explainer import ExplainerService
-        logger.info("Successfully imported all local Ayurvedic AI modules.")
+        from services.tf_predictor import predict as tf_predict
+        logger.info("Successfully imported all local HerbalAI modules.")
     except ImportError as e:
         logger.error(f"Local module import failed: {e}")
         sys.exit(1)
-        
-    # 3. Check database contents
+
+    # 3. Check knowledge base contents
     herbs = get_all_herbs()
-    logger.info(f"Ayurvedic Knowledge Base loaded with {len(herbs)} herbs.")
+    logger.info(f"Herbal Knowledge Base loaded with {len(herbs)} herbs.")
     if len(herbs) != 18:
-        logger.warning(f"Expected 18 herbs, found {len(herbs)}. Please double check database content.")
-        
-    # 4. Check model files
-    skin_weights = "weights/skin_model.pth"
-    herb_weights = "weights/herb_model.pth"
-    
-    if os.path.exists(skin_weights) and os.path.exists(herb_weights):
-        logger.info("Synthetic pre-trained weights files detected.")
+        logger.warning(
+            f"Expected 18 herbs, found {len(herbs)}. Please double check database content."
+        )
+
+    # 4. Check trained model weights (live TF models)
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    leaf_model = os.path.join(backend_dir, "models", "medicinal_leaves", "model.keras")
+    skin_model = os.path.join(backend_dir, "models", "skin_disease", "model.keras")
+    if os.path.exists(leaf_model) and os.path.exists(skin_model):
+        logger.info("Trained TensorFlow model weights detected (medicinal_leaves, skin_disease).")
     else:
-        logger.warning("Weights files not found. They will be generated automatically on first API startup.")
-        
-    logger.info("Backend verification completed successfully! All code files compiled and validated.")
+        missing = [p for p in (leaf_model, skin_model) if not os.path.exists(p)]
+        logger.warning(
+            "Model weights not found: %s. Train with "
+            "utils/train_tf_models.py --dataset <name>.", missing
+        )
+
+    logger.info("Backend verification completed successfully!")
 
 if __name__ == "__main__":
     verify()

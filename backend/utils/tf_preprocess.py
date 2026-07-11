@@ -13,11 +13,12 @@ Manual download steps
                      Download via Kaggle CLI or browser, place ZIP at:  data/medicinal_leaves/raw.zip
 3. isic            → https://challenge.isic-archive.com/data/
                      Download images + ground truth CSV, place them in:  data/isic/raw/
-4. skin_disease    → https://www.kaggle.com/datasets/pacificrm/skindiseasedataset
-                     Download ZIP, place it at:  data/skin_disease/raw.zip
+4. skin_disease    → merged from the six sources under D:\\skin datasets
+                     Run:  python -m utils.merge_skin_datasets
+                     then: python -m utils.train_tf_models --dataset skin_disease --train-both
 
-After placing the files, run:
-    python utils/train_tf_models.py --dataset <name> --epochs 5 --batch-size 32
+After preparing the data, run:
+    python -m utils.train_tf_models --dataset <name> --epochs 15 --batch-size 32
 
 The module provides:
 1. ``prepare_dataset(name)`` – extracts/reorganises data into ``data/<name>/prepared``
@@ -54,12 +55,11 @@ DATASET_SPECS = {
         "description": "Mendeley skin-disease image dataset (dtvbwrhznz/4)",
     },
     "medicinal_leaves": {
-        # kaggle datasets download -d aryashah2k/indian-medicinal-leaves-dataset --unzip
-        # extracts into: data/medicinal_leaves/
-        "local_zip": BASE_DATA_DIR / "medicinal_leaves" / "raw.zip",
-        "local_raw": BASE_DATA_DIR / "medicinal_leaves" / "Indian Medicinal Leaves Image Datasets" / "Medicinal Leaf dataset",
+        # Merged from all D:\\Herbal project leaf datasets via utils.merge_leaf_datasets.
+        # The merge script writes the class-per-folder layout directly into this dir.
+        "local_raw": BASE_DATA_DIR / "medicinal_leaves" / "prepared",
         "class_source": "folders",
-        "description": "Indian Medicinal Leaves (Kaggle: aryashah2k)",
+        "description": "Merged medicinal-leaf datasets (D:\\Herbal project)",
     },
     "isic": {
         # ISIC usually comes as a folder of images + a CSV – no zip expected.
@@ -68,12 +68,12 @@ DATASET_SPECS = {
         "description": "ISIC skin-lesion challenge dataset",
     },
     "skin_disease": {
-        # kaggle datasets download -d pacificrm/skindiseasedataset --unzip
-        # extracts into: data/skin_disease/
-        "local_zip": BASE_DATA_DIR / "skin_disease" / "raw.zip",
-        "local_raw": BASE_DATA_DIR / "skin_disease" / "SkinDisease" / "SkinDisease" / "train",
+        # Built from the six sources under D:\\skin datasets by
+        # utils.merge_skin_datasets (canonical 22-class taxonomy from dataset 6,
+        # augmented with clearly-matching classes from the other sets).
+        "local_raw": BASE_DATA_DIR / "skin_disease" / "prepared",
         "class_source": "folders",
-        "description": "Skin Disease Dataset (Kaggle: pacificrm)",
+        "description": "Merged skin-condition datasets (D:\\skin datasets)",
     },
 }
 
@@ -239,12 +239,17 @@ def load_tf_dataset(
         subset="training",
         seed=seed,
     )
+    # IMPORTANT: use the SAME shuffle + seed as the training subset. With
+    # validation_split, Keras shuffles the file list before slicing only when
+    # shuffle=True; passing shuffle=False here made the validation subset the
+    # last 20% of the class-ordered file list (i.e. only the alphabetically-last
+    # classes), so train/val did not partition consistently.
     val_ds = tf.keras.utils.image_dataset_from_directory(
         prepared,
         label_mode="int",
         image_size=img_size,
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
         validation_split=validation_split,
         subset="validation",
         seed=seed,
@@ -254,12 +259,14 @@ def load_tf_dataset(
     # Normalise to [0, 1]
     rescale = tf.keras.layers.Rescaling(1.0 / 255)
 
-    # Training augmentation
+    # Training augmentation. NOTE: augmentation runs *after* the Rescaling to
+    # [0, 1], so RandomBrightness must use value_range=(0, 1) — the default
+    # (0, 255) would add deltas up to ~25 and clip, destroying every image.
     augment = tf.keras.Sequential([
         tf.keras.layers.RandomFlip("horizontal"),
         tf.keras.layers.RandomRotation(0.1),
         tf.keras.layers.RandomZoom(0.1),
-        tf.keras.layers.RandomBrightness(0.1),
+        tf.keras.layers.RandomBrightness(0.1, value_range=(0, 1)),
     ])
 
     train_ds = (

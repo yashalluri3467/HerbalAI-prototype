@@ -37,6 +37,7 @@ MANIFEST
 # Datasets & Temp files
 backend/data/
 backend/temp_dataset/
+backend/datasets/
 
 # Frontend
 frontend/node_modules/
@@ -56,6 +57,7 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+.vs/
 
 # PyInstaller
 *.manifest
@@ -139,3 +141,13 @@ tempCodeRunnerFile.py
 
 # Claude
 .claude/
+
+# Extra / benchmark model directories
+backend/models/skin_disease_efficientnetb0/
+backend/models/skin_disease_mobilenetv2/
+
+# Weights (old PyTorch models)
+backend/weights/
+
+# Root package-lock
+package-lock.json

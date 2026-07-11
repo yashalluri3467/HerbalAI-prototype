@@ -22,23 +22,12 @@ class RecommenderService:
             base_efficacy = rec["efficacy"]
             base_weight = rec["weight"]
             
-            # Calculate calibrated expected effectiveness
-            # We scale the efficacy slightly based on how confident the skin condition detection was.
-            calibrated_efficacy = int(base_efficacy * (0.9 + 0.1 * disease_confidence))
-            
-            # Recommendation confidence integrates the database suitability weight
-            # and the disease classifier confidence.
-            recommendation_confidence = int(100 * (disease_confidence * base_weight))
-            
-            # Bound values between 5% and 99%
-            calibrated_efficacy = min(max(calibrated_efficacy, 10), 99)
-            recommendation_confidence = min(max(recommendation_confidence, 10), 99)
-            
             recommendations.append({
                 "name": herb_name,
                 "botanical_name": rec["botanical_name"],
-                "efficacy_score": calibrated_efficacy,
-                "recommendation_confidence": recommendation_confidence,
+                "efficacy_score": base_efficacy,
+                "recommendation_confidence": round(disease_confidence * 100, 2),
+                "knowledge_base_weight": base_weight,
                 "evidence_level": rec["evidence_level"],
                 "benefits": rec["benefits"]
             })
@@ -48,23 +37,30 @@ class RecommenderService:
         if classified_herb:
             herb_data = get_herb_by_name(classified_herb)
             if herb_data:
-                is_compatible = detected_disease in herb_data["disease_mapping"]
+                normalized_disease = detected_disease.replace("_", " ").casefold()
+                mapping_key = next(
+                    (
+                        label
+                        for label in herb_data["disease_mapping"]
+                        if label.casefold() == normalized_disease
+                    ),
+                    None,
+                )
+                is_compatible = mapping_key is not None
                 
                 if is_compatible:
-                    mapping = herb_data["disease_mapping"][detected_disease]
+                    mapping = herb_data["disease_mapping"][mapping_key]
                     base_efficacy = mapping["efficacy"]
                     base_weight = mapping["weight"]
-                    
-                    calibrated_efficacy = int(base_efficacy * (0.9 + 0.1 * disease_confidence))
-                    # Combined confidence includes the leaf classifier confidence and skin disease confidence
-                    joint_confidence = int(100 * (disease_confidence * herb_confidence * base_weight))
-                    
-                    calibrated_efficacy = min(max(calibrated_efficacy, 10), 99)
-                    joint_confidence = min(max(joint_confidence, 10), 99)
+                    calibrated_efficacy = base_efficacy
+                    joint_confidence = round(
+                        min(disease_confidence, herb_confidence) * 100, 2
+                    )
                 else:
                     calibrated_efficacy = 0
-                    joint_confidence = int(100 * (disease_confidence * herb_confidence * 0.1)) # Very low
-                    joint_confidence = min(max(joint_confidence, 5), 30)
+                    joint_confidence = round(
+                        min(disease_confidence, herb_confidence) * 100, 2
+                    )
                     
                 leaf_evaluation = {
                     "name": classified_herb,
@@ -72,6 +68,7 @@ class RecommenderService:
                     "is_compatible": is_compatible,
                     "efficacy_score": calibrated_efficacy,
                     "joint_confidence": joint_confidence,
+                    "knowledge_base_weight": base_weight if is_compatible else None,
                     "evidence_level": herb_data["evidence_level"],
                     "benefits": herb_data["benefits"]
                 }

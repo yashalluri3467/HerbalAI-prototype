@@ -8,6 +8,4 @@ matplotlib
 requests
 python-dotenv
 opencv-python-headless
-torch
-torchvision
 tensorflow

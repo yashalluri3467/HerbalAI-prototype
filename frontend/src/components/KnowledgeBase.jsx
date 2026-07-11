@@ -27,15 +27,9 @@ export default function KnowledgeBase() {
 
   const uniqueDiseases = [
     'All',
-    'Acne',
-    'Dry Skin',
-    'Pigmentation',
-    'Eczema',
-    'Wrinkles',
-    'Psoriasis',
-    'Dermatitis',
-    'Fungal Infection',
-    'Healthy Skin'
+    ...Array.from(
+      new Set(herbs.flatMap((herb) => Object.keys(herb.disease_mapping || {})))
+    ).sort(),
   ];
 
   // Filtering logic
@@ -55,7 +49,7 @@ export default function KnowledgeBase() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header and Controls */}
-      <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', borderLeft: '3px solid var(--primary)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem' }}>
@@ -63,10 +57,10 @@ export default function KnowledgeBase() {
               Ayurvedic Herbal Knowledge Base
             </h2>
             <p className="upload-subtext" style={{ marginTop: '0.25rem' }}>
-              Explore phytochemical constituents, therapeutic benefits, and clinical evidence indices for the 18 core Ayurvedic herbs.
+              Reference database detailing phytochemical compounds, active groups, clinical evidence levels, and contraindications.
             </p>
           </div>
-          <span className="badge badge-info">
+          <span className="badge badge-info" style={{ border: '1px solid var(--secondary)' }}>
             {filteredHerbs.length} Herbs Loaded
           </span>
         </div>
@@ -77,19 +71,23 @@ export default function KnowledgeBase() {
             <Search size={18} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
-              placeholder="Search by herb name, botanical name, or active compounds..." 
+              placeholder="Search by herb, botanical name, active compounds..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
                 padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                background: 'rgba(0,0,0,0.3)',
+                background: 'rgba(0,0,0,0.4)',
                 border: '1px solid var(--border-light)',
                 borderRadius: '8px',
                 color: 'var(--text-primary)',
                 outline: 'none',
                 fontFamily: 'var(--font-body)',
+                fontSize: '0.9rem',
+                transition: 'border-color 0.3s ease',
               }}
+              onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--border-light)'}
             />
           </div>
 
@@ -102,14 +100,18 @@ export default function KnowledgeBase() {
               style={{
                 width: '100%',
                 padding: '0.75rem 0.75rem 0.75rem 2.25rem',
-                background: 'rgba(0,0,0,0.3)',
+                background: 'rgba(0,0,0,0.4)',
                 border: '1px solid var(--border-light)',
                 borderRadius: '8px',
                 color: 'var(--text-primary)',
                 outline: 'none',
                 fontFamily: 'var(--font-body)',
+                fontSize: '0.9rem',
                 cursor: 'pointer',
+                transition: 'border-color 0.3s ease',
               }}
+              onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--border-light)'}
             >
               {uniqueDiseases.map(disease => (
                 <option key={disease} value={disease} style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
@@ -140,26 +142,26 @@ export default function KnowledgeBase() {
       {!loading && !error && (
         <div className="grid-3">
           {filteredHerbs.map(herb => (
-            <div key={herb.name} className="glass-card herb-card">
+            <div key={herb.name} className="glass-card herb-card" style={{ background: 'var(--bg-secondary)' }}>
               <div className="herb-header">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <span className="herb-title">{herb.name}</span>
-                  <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                  <span className="herb-title" style={{ fontSize: '1.25rem' }}>{herb.name}</span>
+                  <span className="badge badge-success" style={{ fontSize: '0.6rem', flexShrink: 0 }}>
                     {herb.evidence_level.split(' ')[0]} Evidence
                   </span>
                 </div>
-                <div className="herb-scientific">{herb.botanical_name}</div>
-                <div className="herb-meta">Family: {herb.family}</div>
+                <div className="herb-scientific" style={{ fontSize: '0.85rem' }}>{herb.botanical_name}</div>
+                <div className="herb-meta" style={{ fontSize: '0.75rem', marginTop: '0.15rem' }}>Family: {herb.family}</div>
               </div>
 
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {/* Active Compounds */}
                 <div className="herb-detail-item">
-                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Layers size={13} style={{ color: 'var(--primary)' }} />
+                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-primary)' }}>
+                    <Layers size={12} style={{ color: 'var(--primary)' }} />
                     Active Compounds
                   </span>
-                  <div className="tag-container">
+                  <div className="tag-container" style={{ marginTop: '0.25rem' }}>
                     {herb.active_compounds.map(c => (
                       <span key={c} className="tag">{c}</span>
                     ))}
@@ -168,11 +170,11 @@ export default function KnowledgeBase() {
 
                 {/* Phytochemicals */}
                 <div className="herb-detail-item">
-                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Activity size={13} style={{ color: 'var(--secondary)' }} />
+                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-primary)' }}>
+                    <Activity size={12} style={{ color: 'var(--secondary)' }} />
                     Phytochemical Group
                   </span>
-                  <div className="tag-container">
+                  <div className="tag-container" style={{ marginTop: '0.25rem' }}>
                     {herb.phytochemicals.map(p => (
                       <span key={p} className="tag" style={{ border: '1px solid rgba(13, 148, 136, 0.2)' }}>{p}</span>
                     ))}
@@ -181,10 +183,10 @@ export default function KnowledgeBase() {
 
                 {/* Skincare Benefits */}
                 <div className="herb-detail-item">
-                  <span className="detail-label">Skincare Benefits</span>
-                  <div className="tag-container">
+                  <span className="detail-label" style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }}>Skincare Benefits</span>
+                  <div className="tag-container" style={{ marginTop: '0.25rem' }}>
                     {herb.benefits.map(b => (
-                      <span key={b} className="tag" style={{ background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.2)', color: 'var(--text-primary)' }}>
+                      <span key={b} className="tag" style={{ background: 'rgba(16, 185, 129, 0.04)', borderColor: 'rgba(16, 185, 129, 0.15)', color: 'var(--text-primary)' }}>
                         {b}
                       </span>
                     ))}
@@ -193,19 +195,19 @@ export default function KnowledgeBase() {
 
                 {/* Contraindications */}
                 <div className="herb-detail-item">
-                  <span className="detail-label">Contraindications</span>
-                  <span className="detail-value" style={{ fontSize: '0.8rem', color: herb.contraindications.includes('None') ? 'var(--text-secondary)' : '#f59e0b' }}>
+                  <span className="detail-label" style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }}>Contraindications</span>
+                  <span className="detail-value" style={{ fontSize: '0.8rem', color: herb.contraindications.includes('None') ? 'var(--text-secondary)' : '#f59e0b', display: 'block', marginTop: '0.15rem' }}>
                     {herb.contraindications.join(', ')}
                   </span>
                 </div>
 
                 {/* Preparation */}
-                <div className="herb-detail-item" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '0.5rem', marginTop: 'auto' }}>
-                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <FileText size={13} style={{ color: 'var(--text-muted)' }} />
+                <div className="herb-detail-item" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '0.75rem', marginTop: 'auto' }}>
+                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-primary)' }}>
+                    <FileText size={12} style={{ color: 'var(--text-muted)' }} />
                     Suggested Preparation
                   </span>
-                  <span className="detail-value" style={{ fontSize: '0.8rem' }}>{herb.preparation_method}</span>
+                  <span className="detail-value" style={{ fontSize: '0.8rem', display: 'block', marginTop: '0.15rem', color: 'var(--text-secondary)' }}>{herb.preparation_method}</span>
                 </div>
               </div>
             </div>

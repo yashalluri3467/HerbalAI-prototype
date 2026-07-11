@@ -9,7 +9,6 @@ Models are loaded lazily on first use and cached in memory.
 """
 
 import pathlib
-import functools
 import numpy as np
 import tensorflow as tf
 
@@ -35,11 +34,38 @@ def _load(name: str):
 
     model = tf.keras.models.load_model(model_path)
     class_names = labels_path.read_text().strip().splitlines() if labels_path.is_file() else []
-    _cache[name] = (model, class_names)
-    return model, class_names
+
+    # Derive the model's expected (height, width) so inference always matches how the
+    # model was trained (e.g. 160x160 leaf model vs 224x224 skin model).
+    input_size = (224, 224)
+    try:
+        shape = model.inputs[0].shape
+        if shape[1] is not None and shape[2] is not None:
+            input_size = (int(shape[1]), int(shape[2]))
+    except (AttributeError, IndexError, TypeError):
+        pass
+
+    _cache[name] = (model, class_names, input_size)
+    return _cache[name]
 
 
-def predict(name: str, image_bytes: bytes, img_size: tuple = (224, 224)) -> dict:
+def _quality_metrics(probs: np.ndarray) -> dict:
+    ordered = np.sort(probs)[::-1]
+    top_confidence = float(ordered[0]) if len(ordered) else 0.0
+    runner_up = float(ordered[1]) if len(ordered) > 1 else 0.0
+    margin = top_confidence - runner_up
+    entropy = float(-np.sum(probs * np.log(np.clip(probs, 1e-9, 1.0))))
+    max_entropy = float(np.log(len(probs))) if len(probs) else 1.0
+    normalized_entropy = entropy / max_entropy if max_entropy else 1.0
+    return {
+        "top_confidence": round(top_confidence, 4),
+        "margin": round(margin, 4),
+        "normalized_entropy": round(normalized_entropy, 4),
+        "is_uncertain": top_confidence < 0.45 or margin < 0.12 or normalized_entropy > 0.88,
+    }
+
+
+def predict(name: str, image_bytes: bytes, img_size: tuple | None = None) -> dict:
     """Run inference on raw image bytes.
 
     Returns
@@ -49,7 +75,9 @@ def predict(name: str, image_bytes: bytes, img_size: tuple = (224, 224)) -> dict
         confidence       – probability of top-1 class (float 0-1)
         all_probs        – {class_label: probability} for every class
     """
-    model, class_names = _load(name)
+    model, class_names, input_size = _load(name)
+    if img_size is None:
+        img_size = input_size
 
     # Decode & preprocess
     img = tf.image.decode_image(image_bytes, channels=3, expand_animations=False)
@@ -66,11 +94,13 @@ def predict(name: str, image_bytes: bytes, img_size: tuple = (224, 224)) -> dict
         (class_names[i] if class_names else str(i)): float(probs[i])
         for i in range(len(probs))
     }
+    quality = _quality_metrics(probs)
 
     return {
         "predicted_class": predicted_class,
         "confidence": round(confidence, 4),
         "all_probs": {k: round(v, 4) for k, v in sorted(all_probs.items(), key=lambda x: -x[1])},
+        "quality": quality,
     }
 
 

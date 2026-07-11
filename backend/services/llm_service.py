@@ -3,9 +3,9 @@ import requests
 import json
 import logging
 from dotenv import load_dotenv
+from pathlib import Path
 
-# Load environment variables from .env
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 logger = logging.getLogger("HerbalAI.LLMService")
 
@@ -13,10 +13,13 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 if not OPENROUTER_API_KEY:
     logger.warning("OPENROUTER_API_KEY environment variable is not set. LLM features may fail.")
 
-PRIMARY_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
-# Free vision models (tested and working)
-VISION_PRIMARY_MODEL = "google/gemma-4-26b-a4b-it:free"
-VISION_FALLBACK_MODEL = "nvidia/nemotron-nano-12b-v2-vl:free"
+PRIMARY_MODEL = os.environ.get("OPENROUTER_MODEL", "openrouter/auto")
+LAST_ERROR = None
+
+LLM_DISCLAIMER = (
+    "AI-generated summary for informational use only — not medical advice. "
+    "Consult a qualified practitioner."
+)
 
 HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -25,142 +28,128 @@ HEADERS = {
     "X-Title": "Ayurvedic AI"
 }
 
+
+def _set_last_error(message: str):
+    global LAST_ERROR
+    LAST_ERROR = message
+    logger.error(message)
+
+
+def get_last_error():
+    return LAST_ERROR
+
 def _safe_extract_content(data: dict) -> str:
     """Safely extract content from OpenRouter response, handling missing 'choices' key."""
     try:
         return data["choices"][0]["message"]["content"].strip()
     except (KeyError, IndexError, TypeError) as e:
-        # Log the actual response for debugging
         logger.warning(f"Unexpected API response structure: {str(data)[:200]}")
         return ""
 
-
 def generate_diagnosis_summary(disease: str, herbs: list) -> str:
     """
-    Generates a single LLM summary for the entire skin diagnosis result.
-    Covers: what the disease is, why the recommended herbs help, and general advice.
+    Generates a single LLM summary for the entire skin diagnosis result, GROUNDED in the
+    knowledge base. Returns None (no fabrication) when no recommended herb resolves in the KB.
     """
-    herbs_str = ", ".join(herbs[:3]) if herbs else "various Ayurvedic herbs"
-    
+    if not OPENROUTER_API_KEY:
+        _set_last_error("OPENROUTER_API_KEY is missing. Add it to backend/.env and restart the API.")
+        return None
+
+    from database.knowledge_base import get_herb_by_name
+
+    resolved = []
+    for herb in (herbs or [])[:3]:
+        data = get_herb_by_name(herb)
+        if not data:
+            continue
+        compounds = ", ".join(data.get("active_compounds", [])[:3])
+        benefits = "; ".join(data.get("benefits", [])[:2])
+        resolved.append(f"{herb}: known compounds [{compounds}]; documented benefits [{benefits}]")
+
+    if not resolved:
+        _set_last_error(
+            f"No knowledge-base entries for the recommended herbs {herbs}; "
+            "summary omitted to avoid fabrication."
+        )
+        return None
+
+    herbs_block = " | ".join(resolved)
     prompt = (
         f"The patient has been diagnosed with '{disease}' by our AI skin analysis model. "
-        f"The top recommended Ayurvedic herbs are: {herbs_str}. "
+        f"Knowledge-base-backed information about the recommended herbs: {herbs_block}. "
         f"Provide a concise summary (4-5 sentences) that: "
         f"1) Briefly explains what {disease} is, "
-        f"2) Why these specific herbs are beneficial for it, "
-        f"3) Any general Ayurvedic lifestyle advice for this condition."
+        f"2) Why these specific herbs are beneficial for it based ONLY on the provided information, "
+        f"3) Any general Ayurvedic lifestyle advice for this condition. "
+        f"Do not invent properties not listed above."
     )
-    
+
     payload = {
         "model": PRIMARY_MODEL,
         "messages": [
-            {"role": "system", "content": "You are an expert Ayurvedic dermatologist. Provide concise, clinical, and accurate explanations. Do not use markdown formatting."},
+            {"role": "system", "content": "You are an expert Ayurvedic dermatologist. Provide concise, clinical, and accurate explanations based only on the provided facts. Do not use markdown formatting."},
             {"role": "user", "content": prompt}
         ]
     }
-    
+
     try:
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=HEADERS, json=payload, timeout=20)
         response.raise_for_status()
         data = response.json()
         content = _safe_extract_content(data)
-        return content if content else ""
+        if content:
+            return content
     except Exception as e:
-        logger.error(f"LLM diagnosis summary error: {e}")
-        return ""
+        detail = getattr(getattr(e, "response", None), "text", "")
+        _set_last_error(f"LLM diagnosis summary error: {e}. {detail[:300]}")
+    return None
 
 
 def generate_leaf_summary(herb: str) -> str:
     """
-    Generates a single LLM summary for an identified herb leaf.
+    Generates a single LLM summary for an identified herb leaf, GROUNDED in the knowledge base.
+    Returns None (no fabrication) when the herb has no knowledge-base entry.
     """
+    if not OPENROUTER_API_KEY:
+        _set_last_error("OPENROUTER_API_KEY is missing. Add it to backend/.env and restart the API.")
+        return None
+
+    from database.knowledge_base import get_herb_by_name
+
+    herb_data = get_herb_by_name(herb)
+    if not herb_data:
+        _set_last_error(
+            f"No knowledge-base entry for '{herb}'; summary omitted to avoid fabrication."
+        )
+        return None
+
+    compounds = ", ".join(herb_data.get("active_compounds", [])[:3])
+    phyto = ", ".join(herb_data.get("phytochemicals", [])[:3])
+    benefits = "; ".join(herb_data.get("benefits", [])[:3])
     prompt = (
-        f"The AI has identified the plant leaf as '{herb}'. "
-        f"Provide a concise summary (3-4 sentences) covering: "
-        f"1) What this herb is and its botanical significance, "
-        f"2) Its primary medicinal uses in Ayurveda (especially for skin), "
-        f"3) How it is typically prepared or applied."
+        f"The identified herb is '{herb}' (botanical name: {herb_data.get('botanical_name', '')}). "
+        f"Known active compounds: {compounds}. Phytochemicals: {phyto}. "
+        f"Documented benefits: {benefits}. Evidence level: {herb_data.get('evidence_level', '')}. "
+        f"Write a 3-4 sentence, strictly factual summary using ONLY the information above; "
+        f"do not invent properties. Mention typical preparation: {herb_data.get('preparation_method', '')}."
     )
-    
+
     payload = {
         "model": PRIMARY_MODEL,
         "messages": [
-            {"role": "system", "content": "You are an expert Ayurvedic botanist. Provide concise, clinical, and accurate explanations. Do not use markdown formatting."},
+            {"role": "system", "content": "You are an expert Ayurvedic botanist. Provide concise, clinical, and accurate explanations based only on the provided facts. Do not use markdown formatting."},
             {"role": "user", "content": prompt}
         ]
     }
-    
+
     try:
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=HEADERS, json=payload, timeout=20)
         response.raise_for_status()
         data = response.json()
         content = _safe_extract_content(data)
-        return content if content else ""
-    except Exception as e:
-        logger.error(f"LLM leaf summary error: {e}")
-        return ""
-
-
-def fallback_image_classification(base64_image: str, mode: str) -> str:
-    """
-    Uses a free vision model to classify an image when the local CNN has low confidence.
-    Mode should be 'skin' or 'leaf'.
-    """
-    if mode == 'skin':
-        prompt = (
-            "Analyze this skin image carefully. Identify the skin disease or condition shown. "
-            "Reply ONLY with the disease name (e.g., 'Acne', 'Eczema', 'Psoriasis', 'Pigmentation', "
-            "'Dry Skin', 'Wrinkles', 'Rosacea', or 'Healthy Skin'). Nothing else."
-        )
-    else:
-        prompt = (
-            "Analyze this plant leaf image carefully. Identify the medicinal herb. "
-            "Reply ONLY with the common name of the herb (e.g., 'Neem', 'Aloe Vera', 'Turmeric', "
-            "'Tulsi', 'Amla', 'Moringa', 'Hibiscus', 'Ashwagandha', 'Bhringraj'). Nothing else."
-        )
-    
-    # Strip data URI prefix if present (image_to_base64 adds it)
-    clean_b64 = base64_image
-    if clean_b64.startswith("data:"):
-        clean_b64 = clean_b64.split(",", 1)[1]
-    
-    payload = {
-        "model": VISION_PRIMARY_MODEL,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": prompt
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{clean_b64}"
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-    
-    try:
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=HEADERS, json=payload, timeout=25)
-        data = response.json()
-        content = _safe_extract_content(data)
-        
         if content:
             return content
-        
-        # If primary vision model fails, try fallback
-        logger.warning(f"Primary vision model returned empty, falling back to {VISION_FALLBACK_MODEL}")
-        payload["model"] = VISION_FALLBACK_MODEL
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=HEADERS, json=payload, timeout=25)
-        data = response.json()
-        content = _safe_extract_content(data)
-        return content if content else "Unknown"
-        
     except Exception as e:
-        logger.error(f"LLM image classification error: {e}")
-        return "Unknown"
+        detail = getattr(getattr(e, "response", None), "text", "")
+        _set_last_error(f"LLM leaf summary error: {e}. {detail[:300]}")
+    return None

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Sparkles, AlertCircle, FileText, CheckCircle2, ShieldAlert, ArrowRight, BrainCircuit } from 'lucide-react';
+import { Upload, Sparkles, AlertCircle, FileText, CheckCircle2, BrainCircuit } from 'lucide-react';
 import { predictSkin } from '../utils/api';
 
 export default function SkinDiagnosis({ onAddHistory }) {
@@ -34,7 +34,9 @@ export default function SkinDiagnosis({ onAddHistory }) {
         timestamp: new Date().toLocaleTimeString(),
         prediction: data.disease,
         score: Math.round(data.confidence_score * 100) + '%',
-        details: `Recommends: ${data.recommendations[0]?.name || 'N/A'}`
+        details: data.recommendations[0]?.name
+          ? `Recommendation: ${data.recommendations[0].name}`
+          : 'No knowledge-base recommendation'
       });
     } catch (err) {
       setError(err.message || 'An error occurred during analysis.');
@@ -119,7 +121,7 @@ export default function SkinDiagnosis({ onAddHistory }) {
           <div className="loading-container">
             <div className="spinner"></div>
             <div className="loading-text">Pre-processing image (Denoising & Contrast Enhancement)...</div>
-            <div className="upload-subtext" style={{ marginTop: '0.25rem' }}>Running MobileNetV3 classifier...</div>
+            <div className="upload-subtext" style={{ marginTop: '0.25rem' }}>Running skin-condition classifier...</div>
           </div>
         )}
 
@@ -145,130 +147,118 @@ export default function SkinDiagnosis({ onAddHistory }) {
 
         {result && (
           <>
-            <div className="card-header">
+            <div className="card-header" style={{ marginBottom: '0.5rem' }}>
               <div>
-                <span className="badge badge-success">AI Predictions Calibrated</span>
-                {result.llm_fallback_used && (
-                  <span className="badge" style={{ marginLeft: '0.5rem', backgroundColor: 'var(--accent)', color: '#fff' }}>LLM Fallback Triggered</span>
-                )}
-                <h2 style={{ fontSize: '1.8rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  Diagnosis: <span style={{ color: 'var(--primary)' }}>{result.disease}</span>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span className="badge badge-success">Assessment Calibrated</span>
+                </div>
+                <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  Condition Identified: <span style={{ color: 'var(--primary)' }}>{result.disease}</span>
                 </h2>
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                {renderCircleScore(Math.round(result.confidence_score * 100), 'Diagnosis Confidence', 'var(--primary)')}
+                {renderCircleScore(Math.round(result.confidence_score * 100), 'Confidence Rating', 'var(--primary)')}
               </div>
             </div>
 
-            <div className="divider"></div>
-
-            {/* Explainable AI Visualizer Row */}
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-                Explainable AI (XAI) Visualizer
-              </h3>
-              <div className="visualizer-row">
-                <div className="image-box">
-                  <img src={result.original_image} alt="Original" />
-                  <div className="image-label">1. Original Image</div>
-                </div>
-                <div className="image-box">
-                  <img src={result.enhanced_image} alt="Enhanced" />
-                  <div className="image-label">2. Preprocessed (CLAHE)</div>
-                </div>
-                <div className="image-box" style={{ border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-                  <img src={result.gradcam_heatmap} alt="Gradcam" />
-                  <div className="image-label" style={{ color: 'var(--accent)' }}>3. Grad-CAM Attention Map</div>
-                </div>
-              </div>
-              <div className="alert-box alert-info" style={{ marginTop: '0.75rem', padding: '0.75rem' }}>
-                <Sparkles size={16} className="alert-info-icon" style={{ marginTop: '2px' }} />
-                <div className="alert-text" style={{ fontSize: '0.8rem' }}>
-                  <strong>Grad-CAM Explanation:</strong> The red and orange glowing areas indicate where the classifier model focused its parameters to detect the characteristic markers of {result.disease}.
-                </div>
-              </div>
-            </div>
-
-            <div className="divider"></div>
+            <div className="divider" style={{ margin: '0.5rem 0' }}></div>
 
             {/* Herbal Recommendations */}
             <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-                Top Recommended Ayurvedic Herbs
+              <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                Recommended Ayurvedic Herbs
               </h3>
               
               <div className="rec-list">
                 {result.recommendations.map((rec, index) => (
                   <div key={rec.name} className="rec-item">
-                    <div className="rec-header">
+                    <div className="rec-header" style={{ flexWrap: 'wrap', gap: '1rem', marginBottom: '0.75rem' }}>
                       <div>
-                        <span className="rec-name">{rec.name}</span>
-                        <span className="rec-botanical">({rec.botanical_name})</span>
+                        <span className="rec-name" style={{ fontSize: '1.25rem' }}>{rec.name}</span>
+                        <span className="rec-botanical" style={{ fontSize: '0.85rem' }}>({rec.botanical_name})</span>
                         {index === 0 && (
                           <span className="badge badge-accent" style={{ marginLeft: '0.75rem', fontSize: '0.65rem' }}>
-                            Best Match
+                            Primary Therapy
                           </span>
                         )}
                       </div>
-                      <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--primary)' }}>
-                            {rec.efficacy_score}%
+                      
+                      {/* Efficacy & Confidence Progress Bars instead of plain text */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '220px', flex: 1 }}>
+                        <div className="progress-container">
+                          <div className="progress-label-row">
+                            <span>Clinical Efficacy</span>
+                            <span style={{ color: 'var(--primary)' }}>{rec.efficacy_score}%</span>
                           </div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Expected Efficacy</div>
+                          <div className="progress-bar-bg">
+                            <div className="progress-bar-fill primary" style={{ width: `${rec.efficacy_score}%` }}></div>
+                          </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--accent)' }}>
-                            {rec.recommendation_confidence}%
+                        <div className="progress-container">
+                          <div className="progress-label-row">
+                            <span>Recommendation Confidence</span>
+                            <span style={{ color: 'var(--accent)' }}>{rec.recommendation_confidence}%</span>
                           </div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Rec Confidence</div>
+                          <div className="progress-bar-bg">
+                            <div className="progress-bar-fill accent" style={{ width: `${rec.recommendation_confidence}%` }}></div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <p className="detail-value" style={{ margin: '0.5rem 0', fontStyle: 'italic', background: 'rgba(255,255,255,0.01)', padding: '0.5rem', borderRadius: '4px', borderLeft: '2px solid var(--primary)' }}>
-                      <strong>Clinical Reasoning:</strong> {rec.explanation.reasoning}
+                    <p className="detail-value" style={{ margin: '0.75rem 0', fontStyle: 'italic', background: 'rgba(16, 185, 129, 0.02)', padding: '0.75rem', borderRadius: '6px', borderLeft: '3px solid var(--primary)', lineHeight: '1.5' }}>
+                      <strong>Ayurvedic Actions:</strong> {rec.explanation.reasoning}
                     </p>
 
-
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '0.75rem', fontSize: '0.8rem' }}>
                       <div>
                         <div className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <CheckCircle2 size={13} style={{ color: 'var(--primary)' }} />
-                          Preparation & Method
+                          Preparation & Mode
                         </div>
-                        <div className="detail-value">{rec.explanation.preparation_method}</div>
+                        <div className="detail-value" style={{ marginTop: '0.15rem' }}>{rec.explanation.preparation_method}</div>
                       </div>
                       <div>
                         <div className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <ShieldAlert size={13} style={{ color: '#eab308' }} />
-                          Contraindications
+                          <AlertCircle size={13} style={{ color: '#eab308' }} />
+                          Safety Precautions
                         </div>
-                        <div className="detail-value" style={{ color: rec.explanation.contraindications.includes('None') ? 'var(--text-secondary)' : '#f59e0b' }}>
+                        <div className="detail-value" style={{ marginTop: '0.15rem', color: rec.explanation.contraindications.includes('None') ? 'var(--text-secondary)' : '#f59e0b' }}>
                           {rec.explanation.contraindications.join(', ')}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
+                {result.recommendations.length === 0 && (
+                  <p className="upload-subtext">No matching knowledge-base records are available.</p>
+                )}
               </div>
             </div>
 
-            {/* LLM AI Supplement — shown at the very bottom */}
+            {/* LLM AI Supplement */}
+            {!result.llm_summary && result.llm_error && (
+              <div className="alert-box alert-info" style={{ borderColor: 'rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                <AlertCircle size={20} style={{ color: '#ef4444' }} />
+                <div className="alert-text">
+                  <div className="alert-title" style={{ color: '#ef4444' }}>LLM Summary Unavailable</div>
+                  {result.llm_error}
+                </div>
+              </div>
+            )}
             {result.llm_summary && (
               <>
-                <div className="divider"></div>
-                <div style={{ background: 'rgba(99, 102, 241, 0.04)', border: '1px solid rgba(99, 102, 241, 0.15)', borderRadius: '8px', padding: '1.25rem' }}>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <BrainCircuit size={18} />
-                    AI-Powered Supplement
+                <div className="divider" style={{ margin: '0.5rem 0' }}></div>
+                <div style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.02) 0%, rgba(16, 185, 129, 0.02) 100%)', border: '1px solid rgba(16, 185, 129, 0.15)', borderRadius: '12px', padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.5rem', textTransform: 'uppercase', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem', letterSpacing: '0.05em' }}>
+                    <BrainCircuit size={16} />
+                    Clinical Reference Summary
                   </h3>
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.7', fontSize: '0.9rem', margin: 0 }}>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.85rem', margin: 0 }}>
                     {result.llm_summary}
                   </p>
                   <div style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    Generated by LLM (supplementary to local model analysis)
+                    Note: Information generated dynamically by clinical LLM for medical decision support references.
                   </div>
                 </div>
               </>
@@ -276,6 +266,7 @@ export default function SkinDiagnosis({ onAddHistory }) {
           </>
         )}
       </div>
+
     </div>
   );
 }

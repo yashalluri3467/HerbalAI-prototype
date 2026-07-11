@@ -1,68 +1,110 @@
 # HerbalAI - AI-Based Herbal Recommendation & Skin Diagnosis Platform
 
-HerbalAI is a next-generation clinical decision support system that merges **Computer Vision**, a rich **Ayurvedic Herbal Knowledge Base**, a **DNN-powered Recommendation Engine**, and **Explainable AI (Grad-CAM)** to diagnose skin conditions and suggest precise herbal remedies.
+HerbalAI is a clinical decision support system that merges **Computer Vision**, a rich
+**Ayurvedic Herbal Knowledge Base**, a **DNN-powered Recommendation Engine**, and an
+**LLM-generated Clinical Reference Summary** to diagnose skin conditions and suggest precise
+herbal remedies.
+
+The models are built with **TensorFlow / Keras** using ImageNet transfer learning
+(MobileNetV2, optionally EfficientNetB0). There is no PyTorch, no synthetic pre-training, and
+no Grad-CAM in the current pipeline.
 
 ---
 
 ## 🌟 Key Features
 
 1. **AI Skin Diagnosis**:
-   - Analyzes skin images using a calibrated CNN (MobileNetV3 small) to detect conditions like **Acne, Eczema, Pigmentation, Dry Skin, Wrinkles, Psoriasis, Rosacea, and Healthy Skin**.
-   - Applies advanced image preprocessing: bilateral denoising and CLAHE contrast enhancement (LAB color space) to draw out diagnostic skin textures.
+   - Analyzes skin images with a calibrated CNN to detect **22 dermatology conditions**
+     (Acne, Eczema, Psoriasis, Rosacea, Vitiligo, Tinea, SkinCancer, etc.).
+   - The skin model is trained from real datasets under `D:\skin datasets` (see below) and
+     served by `POST /api/predict/skin`.
 
 2. **Ayurvedic Knowledge Base**:
-   - Integrates 18 essential Ayurvedic herbs: Neem, Aloe Vera, Turmeric, Tulsi, Amla, Harra, Bahera, Giloy, Mahua, Karanj, Palash, Moringa, Hibiscus, Ashwagandha, Bael, Arjun, Chironji, Bhringraj.
-   - Categorizes botanical classifications, active chemical constituents, evidence-based skincare applications, preparation recipes, side effects, and strict contraindications.
+   - Integrates 18 Ayurvedic herbs: Neem, Aloe Vera, Turmeric, Tulsi, Amla, Harra, Bahera,
+     Giloy, Mahua, Karanj, Palash, Moringa, Hibiscus, Ashwagandha, Bael, Arjun, Chironji,
+     Bhringraj.
+   - Categorizes botanical classifications, active chemical constituents, evidence-based
+     skincare applications, preparation recipes, side effects, and strict contraindications.
 
 3. **Multi-Modal Herb & Leaf Evaluator**:
-   - **Identify Herb**: Upload a leaf image to recognize the herbal plant and check its chemical constituents.
-   - **Skin + Herb Joint Evaluation**: Upload both skin and leaf images to evaluate how compatible a specific herb is for a diagnosed skin condition, rendering expected efficacy metrics.
+   - **Identify Herb**: Upload a leaf image to recognize the herbal plant and check its
+     chemical constituents. (Model: `medicinal_leaves`, 200+ leaf classes.)
+   - **Skin + Herb Joint Evaluation**: Upload both skin and leaf images to evaluate how
+     compatible a specific herb is for a diagnosed skin condition, rendering expected
+     efficacy metrics.
 
-4. **Explainable AI (XAI)**:
-   - Implements **Grad-CAM** (Gradient-weighted Class Activation Mapping) directly in PyTorch, projecting visual attention heatmaps over the original skin/leaf images to reveal the exact features the AI model focused on.
-   - Generates structured, clinical-style text justifications explaining the pharmacological reasons why a herb is recommended.
+4. **LLM Clinical Reference**:
+   - Generates a grounded, knowledge-base-backed clinical summary for the detected condition
+     and recommended herbs via the OpenRouter LLM (no fabrication — it refuses when no KB
+     entry exists).
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python, FastAPI, PyTorch (Deep Learning), OpenCV (Image Preprocessing), NumPy, Uvicorn.
-- **Frontend**: React.js, Vite, Lucide React (Icons), Vanilla CSS (Custom properties, Modern dark-mode layout, Glassmorphic variables).
+- **Backend**: Python, FastAPI, TensorFlow / Keras (Deep Learning), OpenCV (Image
+  Preprocessing), NumPy, Uvicorn.
+- **Frontend**: React.js, Vite, Lucide React (Icons), Vanilla CSS (custom properties,
+  modern dark-mode glassmorphic layout).
 
 ---
 
 ## 🚀 Running the Platform
 
 ### 1. Set Up the Backend
-First, ensure you have Python 3.10+ installed. Navigate to the `backend` folder:
+Ensure you have Python 3.11 installed (pinned for TensorFlow compatibility). Navigate to the
+`backend` folder:
 
 ```bash
 cd backend
-# Install dependencies
 pip install -r requirements.txt
 
 # Start the FastAPI server
-# This will automatically run utils/setup_models.py to pre-train the synthetic models on startup if weights are missing!
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload
 ```
-The backend API will run on `http://127.0.0.1:8000`. You can inspect the interactive docs at `http://127.0.0.1:8000/docs`.
+
+The backend API runs on `http://127.0.0.1:8000`. Interactive docs: `http://127.0.0.1:8000/docs`.
+
+> Note: trained models must exist under `backend/models/<dataset>/`. If missing, run the
+> training steps below (or `python verify_backend.py` to check what is present).
 
 ### 2. Set Up the Frontend
-Open a new terminal window and navigate to the `frontend` folder:
+Open a new terminal and navigate to the `frontend` folder:
 
 ```bash
 cd frontend
-# Install dependencies
 npm install
-
-# Run the development server
 npm run dev
 ```
-The React dashboard will launch at `http://localhost:5173`. Open this URL in your web browser.
+
+The React dashboard launches at `http://localhost:5173`.
 
 ---
 
-## 📊 Dataset & Production Scale
+## 📊 Training the Models
 
-- For initial demo and local execution, this project automatically generates synthetic skin texture maps (e.g., pustules for acne, scales for psoriasis, lines for wrinkles) and leaf structures to pre-train the classification models. This ensures **zero setup** and immediate usability.
-- **Production Dataset Recommendation**: For real-world deployment, we recommend training the models on the Kaggle [Skin Disease Dataset by pacificrm](https://www.kaggle.com/datasets/pacificrm/skindiseasedataset) or the ISIC Archive database, mapping them to the multi-label outputs configured in `models/classifiers.py`.
+Both models share one trainer (`backend/utils/train_tf_models.py`) and one predictor
+(`backend/services/tf_predictor.py`). Data is assembled into a class-per-folder layout under
+`backend/data/<dataset>/prepared`.
+
+### Skin model (`skin_disease`, 22 classes)
+1. Merge the six sources under `D:\skin datasets` into the canonical 22-class taxonomy:
+   ```bash
+   python -m utils.merge_skin_datasets --source "D:\skin datasets"
+   ```
+2. Train both candidate backbones and deploy the best by validation macro-F1:
+   ```bash
+   python -m utils.train_tf_models --dataset skin_disease --train-both
+   ```
+   This writes `backend/models/skin_disease/{model.keras, class_names.txt}`.
+
+### Herb model (`medicinal_leaves`)
+1. Merge the leaf datasets, then train:
+   ```bash
+   python -m utils.merge_leaf_datasets
+   python -m utils.train_tf_models --dataset medicinal_leaves
+   ```
+
+Training uses ImageNet transfer learning with a frozen-then-fine-tuned backbone, class
+weights for imbalance, early stopping, and a learning-rate plateau reducer. A per-class
+benchmark report is written next to each model.

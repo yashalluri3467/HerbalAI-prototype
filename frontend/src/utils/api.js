@@ -9,6 +9,22 @@ export async function fetchHerbs() {
   return response.json();
 }
 
+export async function fetchSettings() {
+  const response = await fetch(`${API_BASE_URL}/api/settings`);
+  if (!response.ok) throw new Error('Failed to load application settings');
+  return response.json();
+}
+
+export async function updateSettings(settings) {
+  const response = await fetch(`${API_BASE_URL}/api/settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) throw new Error('Failed to update application settings');
+  return response.json();
+}
+
 export async function predictSkin(file) {
   const formData = new FormData();
   formData.append('file', file);

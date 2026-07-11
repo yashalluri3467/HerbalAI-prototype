@@ -3,7 +3,23 @@
     "allow": [
       "Bash(uvicorn main:app --reload --port 8000)",
       "Bash(npm run *)",
-      "Bash(timeout 30 uvicorn main:app --port 8000 --host 127.0.0.1)"
+      "Bash(timeout 30 uvicorn main:app --port 8000 --host 127.0.0.1)",
+      "Bash(cd \"D:/projects and repos/HerbalAI-Prototype/backend\")",
+      "Bash(ls -1 weights/)",
+      "Bash(ls -1 models/)",
+      "Bash(ls -1 services/)",
+      "Bash(ls -1 utils/)",
+      "Bash(rm -f services/explainer.py)",
+      "Bash(rm -f models/classifiers.py models/gradcam.py)",
+      "Bash(rm -f models/herb_classes.txt models/skin_classes.txt)",
+      "Bash(rm -f utils/setup_models.py utils/train_pytorch_models.py utils/train_herb_dataset.py utils/optimize_models.py utils/benchmark.py utils/prep.py)",
+      "Bash(rm -f weights/herb_model.pt weights/herb_model.pth weights/herb_model_fp16.pt weights/herb_model_fp16.pth weights/herb_model_quantized.pth weights/skin_model.pt weights/skin_model.pth weights/skin_model_fp16.pt weights/skin_model_fp16.pth weights/skin_model_quantized.pth)",
+      "Bash(echo \"Starting merge of D:\\\\\\\\Herbal project leaf datasets...\")",
+      "Bash(tee \"data/medicinal_leaves/train_log.txt\")",
+      "Bash(tee \"data/medicinal_leaves/train_log_headonly.txt\")",
+      "Bash(uvicorn main:app --host 127.0.0.1 --port 8000)",
+      "Bash(echo \"started new uvicorn on 8000 \\(pid $!\\)\")",
+      "Bash(break)"
     ]
   }
 }

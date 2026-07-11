@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Sparkles, AlertCircle, FileText, CheckCircle2, ShieldCheck, HelpCircle, HeartHandshake, BrainCircuit } from 'lucide-react';
+import { Upload, Sparkles, AlertCircle, FileText, CheckCircle2, HelpCircle, HeartHandshake, BrainCircuit } from 'lucide-react';
 import { predictLeaf, predictJoint } from '../utils/api';
 
 export default function HerbEvaluator({ onAddHistory }) {
@@ -56,7 +56,9 @@ export default function HerbEvaluator({ onAddHistory }) {
         timestamp: new Date().toLocaleTimeString(),
         prediction: data.herb,
         score: Math.round(data.confidence_score * 100) + '%',
-        details: `Active compound: ${data.details.active_compounds[0]}`
+        details: data.details?.active_compounds?.[0]
+          ? `Active compound: ${data.details.active_compounds[0]}`
+          : 'No knowledge-base record'
       });
     } catch (err) {
       setError(err.message || 'An error occurred during leaf analysis.');
@@ -77,9 +79,11 @@ export default function HerbEvaluator({ onAddHistory }) {
         type: 'Joint Evaluation',
         inputName: `${skinFile.name} + ${leafFile.name}`,
         timestamp: new Date().toLocaleTimeString(),
-        prediction: `${data.herb} for ${data.disease}`,
-        score: data.evaluation.efficacy_score + '% Efficacy',
-        details: data.evaluation.is_compatible ? 'Compatible' : 'Not Compatible'
+        prediction: `${data.herb_display || data.herb || 'Uncertain leaf'} for ${data.disease}`,
+        score: data.evaluation ? `${data.evaluation.efficacy_score}% Efficacy` : 'Not evaluated',
+        details: data.evaluation
+          ? (data.evaluation.is_compatible ? 'Compatible' : 'Not compatible')
+          : (data.leaf_classification_status === 'uncertain' ? 'Leaf model uncertain' : 'Knowledge base unavailable')
       });
     } catch (err) {
       setError(err.message || 'An error occurred during joint analysis.');
@@ -131,18 +135,18 @@ export default function HerbEvaluator({ onAddHistory }) {
         </div>
 
         {/* Tab Selection */}
-        <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.25rem', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(3, 6, 5, 0.7)', padding: '0.25rem', borderRadius: '9999px', border: '1px solid var(--border-light)' }}>
           <button 
             className={`tab-button ${evalMode === 'leaf' ? 'active' : ''}`}
             onClick={() => { setEvalMode('leaf'); setError(null); }}
-            style={{ flex: 1, borderRadius: '6px' }}
+            style={{ flex: 1, borderRadius: '9999px', justifyContent: 'center' }}
           >
             Identify Herbal Leaf
           </button>
           <button 
             className={`tab-button ${evalMode === 'joint' ? 'active' : ''}`}
             onClick={() => { setEvalMode('joint'); setError(null); }}
-            style={{ flex: 1, borderRadius: '6px' }}
+            style={{ flex: 1, borderRadius: '9999px', justifyContent: 'center' }}
           >
             Skin + Herb Compatibility
           </button>
@@ -276,96 +280,121 @@ export default function HerbEvaluator({ onAddHistory }) {
         {/* 1. SINGLE LEAF CLASSIFICATION OUTPUT */}
         {leafResult && evalMode === 'leaf' && (
           <>
-            <div className="card-header">
+            <div className="card-header" style={{ marginBottom: '0.5rem' }}>
               <div>
-                <span className="badge badge-success">Herb Classified</span>
-                {leafResult.llm_fallback_used && (
-                  <span className="badge" style={{ marginLeft: '0.5rem', backgroundColor: 'var(--accent)', color: '#fff' }}>LLM Fallback Triggered</span>
-                )}
-                <h2 style={{ fontSize: '1.8rem', marginTop: '0.5rem' }}>
-                  Herb: <span style={{ color: 'var(--primary)' }}>{leafResult.herb}</span>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span className={`badge ${leafResult.classification_status === 'uncertain' ? 'badge-info' : 'badge-success'}`}>
+                    {leafResult.classification_status === 'uncertain' ? 'Model Uncertain' : 'Herb Classified'}
+                  </span>
+                </div>
+                <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem' }}>
+                  Botanical Match: <span style={{ color: 'var(--primary)' }}>{leafResult.herb}</span>
                 </h2>
-                <div className="herb-scientific" style={{ fontSize: '1rem' }}>
-                  {leafResult.details.botanical_name} (Family: {leafResult.details.family})
+                <div className="herb-scientific" style={{ fontSize: '1rem', marginTop: '0.15rem' }}>
+                  {leafResult.details
+                    ? `${leafResult.details.botanical_name} (Family: ${leafResult.details.family})`
+                    : 'No matching knowledge-base record'}
                 </div>
               </div>
               <div>
-                {renderCircleScore(Math.round(leafResult.confidence_score * 100), 'Classifier Confidence', 'var(--primary)')}
+                {renderCircleScore(Math.round(leafResult.confidence_score * 100), 'Classification Confidence', 'var(--primary)')}
               </div>
             </div>
 
-            <div className="divider"></div>
-
-            {/* Gradcam visualizer for leaf */}
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-                Leaf Feature Highlight (Grad-CAM)
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="image-box">
-                  <img src={leafResult.enhanced_image} alt="Preprocessed" />
-                  <div className="image-label">Denoised & Enhanced Texture</div>
-                </div>
-                <div className="image-box">
-                  <img src={leafResult.gradcam_heatmap} alt="Gradcam" />
-                  <div className="image-label" style={{ color: 'var(--accent)' }}>Grad-CAM Attention Map</div>
+            {leafResult.classification_status === 'uncertain' && (
+              <div className="alert-box alert-info" style={{ borderColor: 'rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                <AlertCircle size={20} style={{ color: '#ef4444' }} />
+                <div className="alert-text">
+                  <div className="alert-title" style={{ color: '#ef4444' }}>Leaf Model Needs Retraining</div>
+                  The saved model is not separating classes strongly enough to report a plant name. Raw top class: {leafResult.raw_model_prediction}. Confidence margin: {Math.round((leafResult.model_quality?.margin || 0) * 100)}%.
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="divider"></div>
+            {leafResult.top_predictions?.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.5rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                  Dataset Probability Ranking
+                </h3>
+                <div className="rec-list" style={{ gap: '0.5rem' }}>
+                  {leafResult.top_predictions.map((prediction) => (
+                    <div key={prediction.label} className="progress-container">
+                      <div className="progress-label-row">
+                        <span>{prediction.label}</span>
+                        <span style={{ color: 'var(--primary)' }}>{Math.round(prediction.confidence * 100)}%</span>
+                      </div>
+                      <div className="progress-bar-bg">
+                        <div className="progress-bar-fill primary" style={{ width: `${Math.round(prediction.confidence * 100)}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
 
             {/* Phytochemical & Morphological extraction */}
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+            {leafResult.details && <div>
+              <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
                 Extracted Phytochemical & Herb Profile
               </h3>
 
-
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', fontSize: '0.85rem' }}>
                 <div>
-                  <span className="detail-label">Active Compounds</span>
-                  <div className="tag-container" style={{ marginBottom: '0.75rem' }}>
+                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-primary)' }}>
+                    Active Compounds
+                  </span>
+                  <div className="tag-container" style={{ marginBottom: '0.75rem', marginTop: '0.25rem' }}>
                     {leafResult.details.active_compounds.map(c => (
                       <span key={c} className="tag">{c}</span>
                     ))}
                   </div>
-                  <span className="detail-label">Phytochemical Constituents</span>
-                  <div className="tag-container">
+                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-primary)' }}>
+                    Phytochemical Constituents
+                  </span>
+                  <div className="tag-container" style={{ marginTop: '0.25rem' }}>
                     {leafResult.details.phytochemicals.map(p => (
                       <span key={p} className="tag" style={{ border: '1px solid rgba(13, 148, 136, 0.2)' }}>{p}</span>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <span className="detail-label">Skincare Benefits</span>
-                  <ul className="list-unstyled" style={{ color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                  <span className="detail-label" style={{ color: 'var(--text-primary)' }}>Therapeutic Skincare Benefits</span>
+                  <ul className="list-unstyled" style={{ color: 'var(--text-secondary)', lineHeight: '1.6', marginTop: '0.35rem' }}>
                     {leafResult.details.benefits.map(b => (
-                      <li key={b} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem' }}>
-                        <ShieldCheck size={14} style={{ color: 'var(--primary)' }} />
-                        {b}
+                      <li key={b} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                        <CheckCircle2 size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                        <span>{b}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               </div>
-            </div>
+            </div>}
 
-            {/* LLM AI Supplement — shown at the very bottom */}
+            {/* LLM AI Supplement */}
+            {!leafResult.llm_summary && leafResult.llm_error && (
+              <div className="alert-box alert-info" style={{ borderColor: 'rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                <AlertCircle size={20} style={{ color: '#ef4444' }} />
+                <div className="alert-text">
+                  <div className="alert-title" style={{ color: '#ef4444' }}>LLM Summary Unavailable</div>
+                  {leafResult.llm_error}
+                </div>
+              </div>
+            )}
             {leafResult.llm_summary && (
               <>
-                <div className="divider"></div>
-                <div style={{ background: 'rgba(99, 102, 241, 0.04)', border: '1px solid rgba(99, 102, 241, 0.15)', borderRadius: '8px', padding: '1.25rem' }}>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <BrainCircuit size={18} />
-                    AI-Powered Supplement
+                <div className="divider" style={{ margin: '0.5rem 0' }}></div>
+                <div style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.02) 0%, rgba(16, 185, 129, 0.02) 100%)', border: '1px solid rgba(16, 185, 129, 0.15)', borderRadius: '12px', padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.5rem', textTransform: 'uppercase', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem', letterSpacing: '0.05em' }}>
+                    <BrainCircuit size={16} />
+                    Clinical Reference Summary
                   </h3>
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.7', fontSize: '0.9rem', margin: 0 }}>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '0.85rem', margin: 0 }}>
                     {leafResult.llm_summary}
                   </p>
                   <div style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    Generated by LLM (supplementary to local model analysis)
+                    Note: Information generated dynamically by clinical LLM for botanical verification reference.
                   </div>
                 </div>
               </>
@@ -374,79 +403,66 @@ export default function HerbEvaluator({ onAddHistory }) {
         )}
 
         {/* 2. JOINT COMPATIBILITY EVALUATION OUTPUT */}
-        {jointResult && evalMode === 'joint' && (
+        {jointResult && evalMode === 'joint' && jointResult.evaluation && (
           <>
-            <div className="card-header">
+            <div className="card-header" style={{ marginBottom: '0.5rem' }}>
               <div>
                 <span className="badge badge-accent">Compatibility Assessment</span>
-                <h2 style={{ fontSize: '1.8rem', marginTop: '0.5rem' }}>
+                <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem' }}>
                   {jointResult.evaluation.is_compatible ? (
-                    <span style={{ color: 'var(--primary)' }}>Highly Compatible Match</span>
+                    <span style={{ color: 'var(--primary)' }}>Therapeutically Compatible Match</span>
                   ) : (
-                    <span style={{ color: '#ef4444' }}>Low Compatibility Match</span>
+                    <span style={{ color: '#ef4444' }}>Low Compatibility Recommendation</span>
                   )}
                 </h2>
-                <div className="herb-scientific" style={{ fontSize: '1rem' }}>
-                  Evaluating {jointResult.herb} for {jointResult.disease}
+                <div className="herb-scientific" style={{ fontSize: '1rem', marginTop: '0.15rem' }}>
+                  Evaluating {jointResult.herb_display || jointResult.herb} leaf for {jointResult.disease} condition
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                {renderCircleScore(jointResult.evaluation.efficacy_score, 'Skincare Efficacy', 'var(--primary)')}
+                {renderCircleScore(jointResult.evaluation.efficacy_score, 'Efficacy Index', 'var(--primary)')}
                 {renderCircleScore(jointResult.evaluation.joint_confidence, 'Joint Confidence', 'var(--accent)')}
               </div>
             </div>
 
-            <div className="divider"></div>
 
-            {/* Joint Grad-CAM images */}
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-                Multi-Modal Neural Focus Map
-              </h3>
-              <div className="visualizer-row" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <div className="image-box">
-                  <img src={skinPreview ? skinPreview : jointResult.skin_original} alt="Skin" style={{ maxHeight: '180px' }} />
-                  <img src={jointResult.skin_heatmap} alt="Skin Heatmap" style={{ display: 'none' }} />
-                  {/* We can do a hover overlay or hover swap! Let's show the Grad-CAM heatmap since that is more interesting */}
-                  <img src={jointResult.skin_heatmap} alt="Skin Heatmap" />
-                  <div className="image-label">Skin Attention Map ({jointResult.disease})</div>
-                </div>
-                <div className="image-box">
-                  <img src={jointResult.leaf_heatmap} alt="Leaf Heatmap" />
-                  <div className="image-label">Leaf Attention Map ({jointResult.herb})</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="divider"></div>
-
-            {/* Details */}
-            <div className="rec-item" style={{ background: 'rgba(16, 185, 129, 0.03)', borderColor: 'var(--primary)' }}>
+            {/* Details Assessment Card */}
+            <div className={`compat-card ${jointResult.evaluation.is_compatible ? '' : 'incompatible'}`}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                 AI Recommendation Report
               </h3>
-              <p className="detail-value" style={{ lineHeight: '1.6', marginBottom: '1rem' }}>
+              <p className="detail-value" style={{ lineHeight: '1.6', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
                 {jointResult.explanation.reasoning}
               </p>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', fontSize: '0.8rem', borderTop: '1px solid var(--border-light)', paddingTop: '1rem' }}>
                 <div>
-                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-primary)' }}>
                     <CheckCircle2 size={13} style={{ color: 'var(--primary)' }} />
                     Suggested Preparation
                   </span>
-                  <span className="detail-value">{jointResult.explanation.preparation_method}</span>
+                  <span className="detail-value" style={{ display: 'block', marginTop: '0.15rem' }}>{jointResult.explanation.preparation_method}</span>
                 </div>
                 <div>
-                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-primary)' }}>
                     <HelpCircle size={13} style={{ color: 'var(--accent)' }} />
                     Evidence Level
                   </span>
-                  <span className="detail-value">{jointResult.explanation.evidence_level}</span>
+                  <span className="detail-value" style={{ display: 'block', marginTop: '0.15rem' }}>{jointResult.explanation.evidence_level}</span>
                 </div>
               </div>
             </div>
           </>
+        )}
+        {jointResult && evalMode === 'joint' && !jointResult.evaluation && (
+          <div className="alert-box alert-info">
+            <AlertCircle size={20} />
+            <div className="alert-text">
+              <div className="alert-title">Compatibility unavailable</div>
+              Enable the knowledge base in settings to evaluate dataset-backed compatibility.
+              {jointResult.leaf_classification_status === 'uncertain' && ' The leaf classifier also needs retraining before compatibility can be trusted.'}
+            </div>
+          </div>
         )}
       </div>
     </div>
