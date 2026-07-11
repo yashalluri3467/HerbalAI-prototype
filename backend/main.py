@@ -153,6 +153,11 @@ def read_root():
     }
 
 
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok"}
+
+
 @app.get("/api/settings", response_model=AppSettings)
 def get_settings():
     return app_settings
