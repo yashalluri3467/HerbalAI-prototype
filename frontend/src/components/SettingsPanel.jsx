@@ -26,22 +26,36 @@ export default function SettingsPanel() {
     const calculatePosition = () => {
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
-        const spaceAbove = rect.top;
-        const spaceBelow = window.innerHeight - rect.bottom;
         const panelHeight = 300; // approximate height
         const panelWidth = 320;
+        const minLeftPosition = 280; // sidebar is ~260px, so panel should start after that
         
         // Determine vertical position
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
         const openUp = spaceAbove > panelHeight;
         setOpenUpward(openUp);
         
-        // Position to the right of the button
-        let left = rect.right + 10;
+        // Position panel to the right, ensuring it's in the main content area
+        let left = Math.max(minLeftPosition, rect.right + 10);
         let top = openUp ? rect.top - panelHeight : rect.bottom + 10;
         
-        // Check if panel would go off-screen to the right, adjust left side instead
+        // Ensure it doesn't go off-screen to the right
         if (left + panelWidth > window.innerWidth) {
-          left = Math.max(10, rect.left - panelWidth - 10);
+          left = window.innerWidth - panelWidth - 10;
+        }
+        
+        // Ensure top is within bounds
+        if (top < 10) {
+          top = 10;
+        }
+        if (top + panelHeight > window.innerHeight) {
+          top = window.innerHeight - panelHeight - 10;
+        }
+        
+        // Ensure left is not negative
+        if (left < 10) {
+          left = 10;
         }
         
         setPanelPosition({ top, left });
