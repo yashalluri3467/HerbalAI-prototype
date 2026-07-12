@@ -756,6 +756,9 @@ footer {
   text-align: center;
   font-size: 0.75rem;
   color: var(--text-secondary);
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .settings-control {

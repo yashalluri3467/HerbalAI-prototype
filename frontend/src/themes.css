@@ -555,6 +555,11 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   background: rgba(4, 8, 6, 0.9);
+  max-width: 1350px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .layout-one .footer-disclaimer {
@@ -709,6 +714,8 @@
   flex: 1;
   padding: 2rem;
   max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .l2-footer {
@@ -717,6 +724,11 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   border-top: 1px solid var(--border-light);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 @media (max-width: 768px) {
@@ -868,6 +880,11 @@
   text-align: center;
   font-size: 0.75rem;
   color: var(--text-muted);
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .l4-footer-line {
