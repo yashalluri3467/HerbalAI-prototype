@@ -826,8 +826,18 @@ footer {
 
 .settings-toggle {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 16px;
   font-size: 0.85rem;
+  min-width: 0;
+}
+
+.settings-toggle > span:first-child {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .settings-toggle input {
