@@ -12,6 +12,8 @@ const TOGGLES = [
 export default function SettingsPanel() {
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(true);
+  const [panelPosition, setPanelPosition] = useState({ top: 0, left: 0 });
+  const controlRef = useRef(null);
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
   const { settings, saveSettings, loading, error } = useSettings();
@@ -20,33 +22,48 @@ export default function SettingsPanel() {
   useEffect(() => {
     if (!open) return undefined;
     
-    // Check if there's enough space to open upward
-    const checkSpace = () => {
+    // Calculate panel position based on button position
+    const calculatePosition = () => {
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
         const spaceAbove = rect.top;
         const spaceBelow = window.innerHeight - rect.bottom;
         const panelHeight = 300; // approximate height
+        const panelWidth = 320;
         
-        // If not enough space above, open downward
-        if (spaceAbove < panelHeight) {
-          setOpenUpward(false);
-        } else {
-          setOpenUpward(true);
+        // Determine vertical position
+        const openUp = spaceAbove > panelHeight;
+        setOpenUpward(openUp);
+        
+        // Position to the right of the button
+        let left = rect.right + 10;
+        let top = openUp ? rect.top - panelHeight : rect.bottom + 10;
+        
+        // Check if panel would go off-screen to the right, adjust left side instead
+        if (left + panelWidth > window.innerWidth) {
+          left = Math.max(10, rect.left - panelWidth - 10);
         }
+        
+        setPanelPosition({ top, left });
       }
     };
     
-    checkSpace();
-    window.addEventListener('resize', checkSpace);
+    calculatePosition();
+    window.addEventListener('resize', calculatePosition);
     
     const close = (event) => {
-      if (panelRef.current && !panelRef.current.contains(event.target)) setOpen(false);
+      // Check if click is on button or panel - if not, close
+      const isClickOnButton = buttonRef.current && buttonRef.current.contains(event.target);
+      const isClickOnPanel = panelRef.current && panelRef.current.contains(event.target);
+      
+      if (!isClickOnButton && !isClickOnPanel) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', close);
     return () => {
       document.removeEventListener('mousedown', close);
-      window.removeEventListener('resize', checkSpace);
+      window.removeEventListener('resize', calculatePosition);
     };
   }, [open]);
 
@@ -55,7 +72,7 @@ export default function SettingsPanel() {
   };
 
   return (
-    <div className="settings-control" ref={panelRef}>
+    <div className="settings-control" ref={controlRef}>
       <button
         ref={buttonRef}
         className="settings-button"
@@ -67,7 +84,14 @@ export default function SettingsPanel() {
         <Settings size={18} />
       </button>
       {open && (
-        <div className={`settings-panel ${openUpward ? 'upward' : 'downward'}`}>
+        <div
+          ref={panelRef}
+          className={`settings-panel ${openUpward ? 'upward' : 'downward'}`}
+          style={{
+            top: `${panelPosition.top}px`,
+            left: `${panelPosition.left}px`,
+          }}
+        >
           <div className="settings-header">
             <h2>Settings</h2>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close settings">
