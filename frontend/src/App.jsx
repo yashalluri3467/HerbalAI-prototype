@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useTheme } from './ThemeContext';
 import LayoutOne from './components/LayoutOne';
 import LayoutTwo from './components/LayoutTwo';
-import LayoutThree from './components/LayoutThree';
 import LayoutFour from './components/LayoutFour';
 
 export default function App() {
@@ -27,8 +26,6 @@ export default function App() {
   switch (themeId) {
     case 'botanical-serenity':
       return <LayoutTwo {...layoutProps} />;
-    case 'aurora-gradient':
-      return <LayoutThree {...layoutProps} />;
     case 'clinical-minimal':
       return <LayoutFour {...layoutProps} />;
     case 'obsidian-cyber':

@@ -3,18 +3,20 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const THEMES = [
   { id: 'obsidian-cyber', label: 'Obsidian Cyber', icon: '🔮' },
   { id: 'botanical-serenity', label: 'Botanical Serenity', icon: '🌿' },
-  { id: 'aurora-gradient', label: 'Aurora Gradient', icon: '🌌' },
   { id: 'clinical-minimal', label: 'Clinical Minimal', icon: '🏥' },
 ];
 
 const ThemeContext = createContext();
 
+const THEME_IDS = new Set(THEMES.map((t) => t.id));
+
 export function ThemeProvider({ children }) {
   const [themeId, setThemeId] = useState(() => {
     try {
-      return localStorage.getItem('herbalai-theme') || 'obsidian-cyber';
+      const stored = localStorage.getItem('herbalai-theme');
+      return stored && THEME_IDS.has(stored) ? stored : 'clinical-minimal';
     } catch {
-      return 'obsidian-cyber';
+      return 'clinical-minimal';
     }
   });
 
