@@ -11,17 +11,43 @@ const TOGGLES = [
 
 export default function SettingsPanel() {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(true);
   const panelRef = useRef(null);
+  const buttonRef = useRef(null);
   const { settings, saveSettings, loading, error } = useSettings();
   const { themeId, setThemeId, themes } = useTheme();
 
   useEffect(() => {
     if (!open) return undefined;
+    
+    // Check if there's enough space to open upward
+    const checkSpace = () => {
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const panelHeight = 300; // approximate height
+        
+        // If not enough space above, open downward
+        if (spaceAbove < panelHeight) {
+          setOpenUpward(false);
+        } else {
+          setOpenUpward(true);
+        }
+      }
+    };
+    
+    checkSpace();
+    window.addEventListener('resize', checkSpace);
+    
     const close = (event) => {
       if (panelRef.current && !panelRef.current.contains(event.target)) setOpen(false);
     };
     document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('resize', checkSpace);
+    };
   }, [open]);
 
   const toggle = (key) => {
@@ -31,6 +57,7 @@ export default function SettingsPanel() {
   return (
     <div className="settings-control" ref={panelRef}>
       <button
+        ref={buttonRef}
         className="settings-button"
         type="button"
         aria-label="Open settings"
@@ -40,7 +67,7 @@ export default function SettingsPanel() {
         <Settings size={18} />
       </button>
       {open && (
-        <div className="settings-panel">
+        <div className={`settings-panel ${openUpward ? 'upward' : 'downward'}`}>
           <div className="settings-header">
             <h2>Settings</h2>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close settings">
