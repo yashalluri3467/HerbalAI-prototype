@@ -19,6 +19,7 @@ from database.knowledge_base import get_all_herbs, get_herb_by_name
 from services.recommender import RecommenderService
 from services.tf_predictor import available_datasets as tf_available
 from services.tf_predictor import predict as tf_predict
+from services.domain_gate import is_valid_domain
 import services.llm_service as llm_service
 
 load_dotenv()
@@ -208,6 +209,12 @@ def get_herb(name: str):
 async def predict_skin(file: UploadFile = File(...)):
     try:
         contents = await file.read()
+        if not is_valid_domain("skin", contents):
+            raise HTTPException(
+                status_code=422,
+                detail="This doesn't look like a skin photo. "
+                "Please upload an image of the affected skin area only.",
+            )
         result = tf_predict("skin_disease", contents)
         disease = result["predicted_class"]
         confidence = result["confidence"]
@@ -261,6 +268,8 @@ async def predict_skin(file: UploadFile = File(...)):
             "skin", response_payload, image=response_payload.get("original_image")
         )
         return response_payload
+    except HTTPException:
+        raise
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
@@ -272,6 +281,12 @@ async def predict_skin(file: UploadFile = File(...)):
 async def predict_leaf(file: UploadFile = File(...)):
     try:
         contents = await file.read()
+        if not is_valid_domain("leaf", contents):
+            raise HTTPException(
+                status_code=422,
+                detail="This doesn't look like a leaf photo. "
+                "Please upload an image of a leaf only.",
+            )
         result = tf_predict("medicinal_leaves", contents)
         quality = model_quality(result)
         is_uncertain = quality.get("is_uncertain", False)
@@ -315,6 +330,8 @@ async def predict_leaf(file: UploadFile = File(...)):
             "leaf", response_payload, image=response_payload.get("original_image")
         )
         return response_payload
+    except HTTPException:
+        raise
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
@@ -330,6 +347,18 @@ async def predict_joint(
     try:
         skin_contents = await skin_file.read()
         leaf_contents = await leaf_file.read()
+        if not is_valid_domain("skin", skin_contents):
+            raise HTTPException(
+                status_code=422,
+                detail="This doesn't look like a skin photo. "
+                "Please upload an image of the affected skin area only.",
+            )
+        if not is_valid_domain("leaf", leaf_contents):
+            raise HTTPException(
+                status_code=422,
+                detail="This doesn't look like a leaf photo. "
+                "Please upload an image of a leaf only.",
+            )
         skin_result = tf_predict("skin_disease", skin_contents)
         leaf_result = tf_predict("medicinal_leaves", leaf_contents)
         disease = skin_result["predicted_class"]
@@ -378,6 +407,8 @@ async def predict_joint(
             image=response_payload.get("skin_original"),
         )
         return response_payload
+    except HTTPException:
+        raise
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:

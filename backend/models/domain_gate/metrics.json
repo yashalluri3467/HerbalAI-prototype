@@ -1,0 +1,12 @@
+{
+  "dataset": "domain_gate",
+  "out_name": "domain_gate",
+  "backbone": "mobilenetv2",
+  "image_size": 160,
+  "device": "CPU",
+  "num_classes": 3,
+  "total_params": 2261827,
+  "accuracy": 0.9962,
+  "macro_f1": 0.9958,
+  "weighted_f1": 0.9961
+}

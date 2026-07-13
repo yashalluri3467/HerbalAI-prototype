@@ -74,6 +74,14 @@ DATASET_SPECS = {
         "class_source": "folders",
         "description": "Merged skin-condition datasets (D:\\skin datasets)",
     },
+    "domain_gate": {
+        # 3-class upload validator (skin / leaf / other) assembled by
+        # utils.prepare_domain_gate. The "other" class must be supplied by the
+        # user under data/domain_gate/raw_other/.
+        "local_raw": BASE_DATA_DIR / "domain_gate" / "prepared",
+        "class_source": "folders",
+        "description": "3-class domain gate (skin / leaf / other) for upload validation",
+    },
 }
 
 
