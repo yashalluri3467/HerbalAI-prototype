@@ -27,7 +27,6 @@ The module provides:
    ready for model.fit().
 """
 
-import os
 import pathlib
 import zipfile
 import shutil
@@ -82,6 +81,7 @@ DATASET_SPECS = {
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _extract_zip(zip_path: pathlib.Path, extract_dir: pathlib.Path) -> pathlib.Path:
     """Extract a ZIP archive to *extract_dir* (skips if already extracted)."""
     if extract_dir.exists() and any(extract_dir.iterdir()):
@@ -92,7 +92,9 @@ def _extract_zip(zip_path: pathlib.Path, extract_dir: pathlib.Path) -> pathlib.P
     return extract_dir
 
 
-def _flatten_folder_structure(root: pathlib.Path, target: pathlib.Path, class_source: str):
+def _flatten_folder_structure(
+    root: pathlib.Path, target: pathlib.Path, class_source: str
+):
     """Re-organise *root* into ``target/<class>/`` layout.
 
     * ``folders`` – each immediate sub-directory of *root* is a class label.
@@ -139,7 +141,9 @@ def _flatten_folder_structure(root: pathlib.Path, target: pathlib.Path, class_so
         with open(csv_path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                img_rel = row.get("image_path") or row.get("image") or row.get("isic_id")
+                img_rel = (
+                    row.get("image_path") or row.get("image") or row.get("isic_id")
+                )
                 label = row.get("label") or row.get("dx") or row.get("diagnosis")
                 if not img_rel or not label:
                     continue
@@ -165,6 +169,7 @@ def _flatten_folder_structure(root: pathlib.Path, target: pathlib.Path, class_so
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def prepare_dataset(name: str) -> pathlib.Path:
     """Prepare ``data/<name>/prepared`` for ``image_dataset_from_directory``.
@@ -193,7 +198,15 @@ def prepare_dataset(name: str) -> pathlib.Path:
     local_raw: pathlib.Path | None = spec.get("local_raw")
     local_zip: pathlib.Path | None = spec.get("local_zip")
 
-    if local_raw and local_raw.is_dir() and any(f.suffix.lower() in {".jpg", ".jpeg", ".png", ".bmp"} for f in local_raw.rglob("*") if f.is_file()):
+    if (
+        local_raw
+        and local_raw.is_dir()
+        and any(
+            f.suffix.lower() in {".jpg", ".jpeg", ".png", ".bmp"}
+            for f in local_raw.rglob("*")
+            if f.is_file()
+        )
+    ):
         # Already extracted (e.g. via kaggle --unzip)
         raw = local_raw
         print(f"[{name}] Found pre-extracted data at {raw}")
@@ -262,24 +275,26 @@ def load_tf_dataset(
     # Training augmentation. NOTE: augmentation runs *after* the Rescaling to
     # [0, 1], so RandomBrightness must use value_range=(0, 1) — the default
     # (0, 255) would add deltas up to ~25 and clip, destroying every image.
-    augment = tf.keras.Sequential([
-        tf.keras.layers.RandomFlip("horizontal"),
-        tf.keras.layers.RandomRotation(0.1),
-        tf.keras.layers.RandomZoom(0.1),
-        tf.keras.layers.RandomBrightness(0.1, value_range=(0, 1)),
-    ])
+    augment = tf.keras.Sequential(
+        [
+            tf.keras.layers.RandomFlip("horizontal"),
+            tf.keras.layers.RandomRotation(0.1),
+            tf.keras.layers.RandomZoom(0.1),
+            tf.keras.layers.RandomBrightness(0.1, value_range=(0, 1)),
+        ]
+    )
 
     train_ds = (
-        train_ds
-        .map(lambda x, y: (rescale(x), y), num_parallel_calls=tf.data.AUTOTUNE)
-        .map(lambda x, y: (augment(x, training=True), y), num_parallel_calls=tf.data.AUTOTUNE)
+        train_ds.map(lambda x, y: (rescale(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+        .map(
+            lambda x, y: (augment(x, training=True), y),
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
         .prefetch(tf.data.AUTOTUNE)
     )
-    val_ds = (
-        val_ds
-        .map(lambda x, y: (rescale(x), y), num_parallel_calls=tf.data.AUTOTUNE)
-        .prefetch(tf.data.AUTOTUNE)
-    )
+    val_ds = val_ds.map(
+        lambda x, y: (rescale(x), y), num_parallel_calls=tf.data.AUTOTUNE
+    ).prefetch(tf.data.AUTOTUNE)
 
     return train_ds, val_ds, class_names
 

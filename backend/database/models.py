@@ -1,4 +1,5 @@
 """ORM model for persisted diagnosis sessions."""
+
 from typing import Optional
 
 from sqlalchemy import DateTime, Float, Integer, JSON, String, Text, func

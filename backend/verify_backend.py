@@ -5,15 +5,17 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("VerifyBackend")
 
+
 def verify():
     logger.info("Starting verification of HerbalAI backend components...")
 
     # 1. Check core dependencies
     try:
-        import fastapi
-        import uvicorn
-        import cv2
-        import numpy as np
+        import fastapi  # noqa: F401
+        import uvicorn  # noqa: F401
+        import cv2  # noqa: F401
+        import numpy as np  # noqa: F401
+
         logger.info("Successfully imported all core third-party dependencies.")
     except ImportError as e:
         logger.error(f"Dependency import failed: {e}")
@@ -21,9 +23,10 @@ def verify():
 
     # 2. Check local modules (live TensorFlow stack only)
     try:
-        from database.knowledge_base import get_all_herbs
-        from services.recommender import RecommenderService
-        from services.tf_predictor import predict as tf_predict
+        from database.knowledge_base import get_all_herbs  # noqa: F401
+        from services.recommender import RecommenderService  # noqa: F401
+        from services.tf_predictor import predict as tf_predict  # noqa: F401
+
         logger.info("Successfully imported all local HerbalAI modules.")
     except ImportError as e:
         logger.error(f"Local module import failed: {e}")
@@ -42,15 +45,19 @@ def verify():
     leaf_model = os.path.join(backend_dir, "models", "medicinal_leaves", "model.keras")
     skin_model = os.path.join(backend_dir, "models", "skin_disease", "model.keras")
     if os.path.exists(leaf_model) and os.path.exists(skin_model):
-        logger.info("Trained TensorFlow model weights detected (medicinal_leaves, skin_disease).")
+        logger.info(
+            "Trained TensorFlow model weights detected (medicinal_leaves, skin_disease)."
+        )
     else:
         missing = [p for p in (leaf_model, skin_model) if not os.path.exists(p)]
         logger.warning(
             "Model weights not found: %s. Train with "
-            "utils/train_tf_models.py --dataset <name>.", missing
+            "utils/train_tf_models.py --dataset <name>.",
+            missing,
         )
 
     logger.info("Backend verification completed successfully!")
+
 
 if __name__ == "__main__":
     verify()

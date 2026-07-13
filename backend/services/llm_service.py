@@ -1,6 +1,5 @@
 import os
 import requests
-import json
 import logging
 from dotenv import load_dotenv
 from pathlib import Path
@@ -11,7 +10,9 @@ logger = logging.getLogger("HerbalAI.LLMService")
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 if not OPENROUTER_API_KEY:
-    logger.warning("OPENROUTER_API_KEY environment variable is not set. LLM features may fail.")
+    logger.warning(
+        "OPENROUTER_API_KEY environment variable is not set. LLM features may fail."
+    )
 
 PRIMARY_MODEL = os.environ.get("OPENROUTER_MODEL", "openrouter/auto")
 LAST_ERROR = None
@@ -25,7 +26,7 @@ HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     "Content-Type": "application/json",
     "HTTP-Referer": "http://localhost:5173",
-    "X-Title": "Ayurvedic AI"
+    "X-Title": "Ayurvedic AI",
 }
 
 
@@ -38,13 +39,15 @@ def _set_last_error(message: str):
 def get_last_error():
     return LAST_ERROR
 
+
 def _safe_extract_content(data: dict) -> str:
     """Safely extract content from OpenRouter response, handling missing 'choices' key."""
     try:
         return data["choices"][0]["message"]["content"].strip()
-    except (KeyError, IndexError, TypeError) as e:
+    except (KeyError, IndexError, TypeError):
         logger.warning(f"Unexpected API response structure: {str(data)[:200]}")
         return ""
+
 
 def generate_diagnosis_summary(disease: str, herbs: list) -> str:
     """
@@ -52,7 +55,9 @@ def generate_diagnosis_summary(disease: str, herbs: list) -> str:
     knowledge base. Returns None (no fabrication) when no recommended herb resolves in the KB.
     """
     if not OPENROUTER_API_KEY:
-        _set_last_error("OPENROUTER_API_KEY is missing. Add it to backend/.env and restart the API.")
+        _set_last_error(
+            "OPENROUTER_API_KEY is missing. Add it to backend/.env and restart the API."
+        )
         return None
 
     from database.knowledge_base import get_herb_by_name
@@ -64,7 +69,9 @@ def generate_diagnosis_summary(disease: str, herbs: list) -> str:
             continue
         compounds = ", ".join(data.get("active_compounds", [])[:3])
         benefits = "; ".join(data.get("benefits", [])[:2])
-        resolved.append(f"{herb}: known compounds [{compounds}]; documented benefits [{benefits}]")
+        resolved.append(
+            f"{herb}: known compounds [{compounds}]; documented benefits [{benefits}]"
+        )
 
     if not resolved:
         _set_last_error(
@@ -87,13 +94,21 @@ def generate_diagnosis_summary(disease: str, herbs: list) -> str:
     payload = {
         "model": PRIMARY_MODEL,
         "messages": [
-            {"role": "system", "content": "You are an expert Ayurvedic dermatologist. Provide concise, clinical, and accurate explanations based only on the provided facts. Do not use markdown formatting."},
-            {"role": "user", "content": prompt}
-        ]
+            {
+                "role": "system",
+                "content": "You are an expert Ayurvedic dermatologist. Provide concise, clinical, and accurate explanations based only on the provided facts. Do not use markdown formatting.",
+            },
+            {"role": "user", "content": prompt},
+        ],
     }
 
     try:
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=HEADERS, json=payload, timeout=20)
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=HEADERS,
+            json=payload,
+            timeout=20,
+        )
         response.raise_for_status()
         data = response.json()
         content = _safe_extract_content(data)
@@ -111,7 +126,9 @@ def generate_leaf_summary(herb: str) -> str:
     Returns None (no fabrication) when the herb has no knowledge-base entry.
     """
     if not OPENROUTER_API_KEY:
-        _set_last_error("OPENROUTER_API_KEY is missing. Add it to backend/.env and restart the API.")
+        _set_last_error(
+            "OPENROUTER_API_KEY is missing. Add it to backend/.env and restart the API."
+        )
         return None
 
     from database.knowledge_base import get_herb_by_name
@@ -137,13 +154,21 @@ def generate_leaf_summary(herb: str) -> str:
     payload = {
         "model": PRIMARY_MODEL,
         "messages": [
-            {"role": "system", "content": "You are an expert Ayurvedic botanist. Provide concise, clinical, and accurate explanations based only on the provided facts. Do not use markdown formatting."},
-            {"role": "user", "content": prompt}
-        ]
+            {
+                "role": "system",
+                "content": "You are an expert Ayurvedic botanist. Provide concise, clinical, and accurate explanations based only on the provided facts. Do not use markdown formatting.",
+            },
+            {"role": "user", "content": prompt},
+        ],
     }
 
     try:
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=HEADERS, json=payload, timeout=20)
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=HEADERS,
+            json=payload,
+            timeout=20,
+        )
         response.raise_for_status()
         data = response.json()
         content = _safe_extract_content(data)

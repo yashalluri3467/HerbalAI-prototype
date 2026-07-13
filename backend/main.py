@@ -2,7 +2,6 @@ import base64
 import logging
 import os
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Optional
 
 import cv2
@@ -91,6 +90,8 @@ async def _persist_session(
             await db.commit()
     except Exception as exc:  # pragma: no cover - persistence must never break API
         logger.warning("Failed to persist session record: %s", exc)
+
+
 # Allowed CORS origins for the frontend. Defaults to "*" (any origin) when
 # FRONTEND_URL is unset so local/dev and the Vercel frontend both work. Set
 # FRONTEND_URL on Render (comma-separated) to restrict to specific origins.
@@ -183,17 +184,23 @@ def update_settings(settings: AppSettings):
 @app.get("/api/herbs")
 def get_herbs():
     if not app_settings.knowledge_base_enabled:
-        raise HTTPException(status_code=503, detail="Knowledge base is disabled in settings")
+        raise HTTPException(
+            status_code=503, detail="Knowledge base is disabled in settings"
+        )
     return get_all_herbs()
 
 
 @app.get("/api/herbs/{name}")
 def get_herb(name: str):
     if not app_settings.knowledge_base_enabled:
-        raise HTTPException(status_code=503, detail="Knowledge base is disabled in settings")
+        raise HTTPException(
+            status_code=503, detail="Knowledge base is disabled in settings"
+        )
     herb = get_herb_by_name(name)
     if not herb:
-        raise HTTPException(status_code=404, detail=f"No knowledge-base record for '{name}'")
+        raise HTTPException(
+            status_code=404, detail=f"No knowledge-base record for '{name}'"
+        )
     return herb
 
 
@@ -233,7 +240,11 @@ async def predict_skin(file: UploadFile = File(...)):
             "confidence_score": confidence,
             "top_predictions": top_predictions(result),
             "model_quality": model_quality(result),
-            "classification_status": "uncertain" if model_quality(result).get("is_uncertain") else "classified",
+            "classification_status": (
+                "uncertain"
+                if model_quality(result).get("is_uncertain")
+                else "classified"
+            ),
             "prediction_source": "skin_disease_dataset",
             "original_image": image_to_base64(original),
             "enhanced_image": (
@@ -246,7 +257,9 @@ async def predict_skin(file: UploadFile = File(...)):
             "llm_error": llm_error,
             "llm_disclaimer": llm_service.LLM_DISCLAIMER if llm_summary else None,
         }
-        await _persist_session("skin", response_payload, image=response_payload.get("original_image"))
+        await _persist_session(
+            "skin", response_payload, image=response_payload.get("original_image")
+        )
         return response_payload
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
@@ -274,7 +287,8 @@ async def predict_leaf(file: UploadFile = File(...)):
         llm_error = None
         if app_settings.llm_suggestions_enabled:
             llm_summary = await run_in_threadpool(
-                llm_service.generate_leaf_summary, herb_name or result["predicted_class"]
+                llm_service.generate_leaf_summary,
+                herb_name or result["predicted_class"],
             )
             llm_error = None if llm_summary else llm_service.get_last_error()
 
@@ -297,7 +311,9 @@ async def predict_leaf(file: UploadFile = File(...)):
             "llm_error": llm_error,
             "llm_disclaimer": llm_service.LLM_DISCLAIMER if llm_summary else None,
         }
-        await _persist_session("leaf", response_payload, image=response_payload.get("original_image"))
+        await _persist_session(
+            "leaf", response_payload, image=response_payload.get("original_image")
+        )
         return response_payload
     except FileNotFoundError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
@@ -346,7 +362,9 @@ async def predict_joint(
             "herb_confidence": leaf_result["confidence"],
             "leaf_top_predictions": top_predictions(leaf_result),
             "leaf_model_quality": leaf_quality,
-            "leaf_classification_status": "uncertain" if leaf_uncertain else "classified",
+            "leaf_classification_status": (
+                "uncertain" if leaf_uncertain else "classified"
+            ),
             "leaf_raw_model_prediction": leaf_result["predicted_class"],
             "prediction_source": "trained_datasets",
             "skin_original": image_to_base64(skin_original),
@@ -398,13 +416,17 @@ async def get_sessions(limit: int = 50, offset: int = 0, db=Depends(get_db)):
     if not DB_ENABLED:
         return {"sessions": [], "db_enabled": False}
     rows = (
-        await db.execute(
-            select(SessionRecord)
-            .order_by(desc(SessionRecord.created_at))
-            .limit(limit)
-            .offset(offset)
+        (
+            await db.execute(
+                select(SessionRecord)
+                .order_by(desc(SessionRecord.created_at))
+                .limit(limit)
+                .offset(offset)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     sessions = [
         {
             "id": r.id,

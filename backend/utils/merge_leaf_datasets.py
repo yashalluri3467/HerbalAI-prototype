@@ -16,7 +16,6 @@ Run:
 """
 
 import json
-import random
 import re
 import shutil
 import sys
@@ -37,10 +36,30 @@ IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
 
 # Source roots (order defines merge priority: earlier sources win the label name).
 SOURCES = [
-    ("s1", Path(r"D:/Herbal project/leaf dataset/Indian Medicinal Leaves Image Datasets/Medicinal Leaf dataset")),
-    ("s2", Path(r"D:/Herbal project/leaf dataset/Indian Medicinal Leaves Image Datasets/Medicinal plant dataset")),
-    ("s3", Path(r"D:/Herbal project/MED117_Medicinal Plant Leaf Dataset & Name Table/MED117_Medicinal Plant Leaf Dataset & Name Table/MED 117 Leaf Species/Raw leaf image set of Medicinal plants_v2")),
-    ("s4", Path(r"D:/Herbal project/archive/Medicinal Plant Identification Dataset/Original-Images-Version-02")),
+    (
+        "s1",
+        Path(
+            r"D:/Herbal project/leaf dataset/Indian Medicinal Leaves Image Datasets/Medicinal Leaf dataset"
+        ),
+    ),
+    (
+        "s2",
+        Path(
+            r"D:/Herbal project/leaf dataset/Indian Medicinal Leaves Image Datasets/Medicinal plant dataset"
+        ),
+    ),
+    (
+        "s3",
+        Path(
+            r"D:/Herbal project/MED117_Medicinal Plant Leaf Dataset & Name Table/MED117_Medicinal Plant Leaf Dataset & Name Table/MED 117 Leaf Species/Raw leaf image set of Medicinal plants_v2"
+        ),
+    ),
+    (
+        "s4",
+        Path(
+            r"D:/Herbal project/archive/Medicinal Plant Identification Dataset/Original-Images-Version-02"
+        ),
+    ),
 ]
 
 # Catch the obvious name variants so clean-set dupes collapse to one class.
@@ -70,7 +89,9 @@ def normalize(name: str) -> str:
 
 
 def collect_images(folder: Path) -> list[Path]:
-    return [p for p in folder.rglob("*") if p.suffix.lower() in IMG_EXTS and p.is_file()]
+    return [
+        p for p in folder.rglob("*") if p.suffix.lower() in IMG_EXTS and p.is_file()
+    ]
 
 
 def main() -> int:
@@ -89,9 +110,7 @@ def main() -> int:
             if not label:
                 logger.warning("Skipping un-nameable folder: %s", class_folder)
                 continue
-            entry = classes.setdefault(
-                label, {"sources": {}, "images": []}
-            )
+            entry = classes.setdefault(label, {"sources": {}, "images": []})
             entry["sources"][tag] = class_folder.name
             entry["images"].extend(collect_images(class_folder))
 
@@ -133,7 +152,9 @@ def main() -> int:
 
     logger.info(
         "Merge complete: %d classes, %d images -> %s",
-        final_count, total_images, DEST,
+        final_count,
+        total_images,
+        DEST,
     )
     logger.info("Manifest written to %s", DEST.parent / "merge_manifest.json")
     return 0

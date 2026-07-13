@@ -2,11 +2,8 @@ import json
 import re
 from pathlib import Path
 
-
 DATASET_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "datasets"
-    / "herbal_knowledge_base.json"
+    Path(__file__).resolve().parent.parent / "datasets" / "herbal_knowledge_base.json"
 )
 
 

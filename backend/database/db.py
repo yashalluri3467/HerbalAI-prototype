@@ -3,8 +3,8 @@
 Reads DATABASE_URL from the environment. If it is unset, the database is
 disabled and the app runs without persistence (predictions still succeed).
 """
+
 import os
-from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy import MetaData

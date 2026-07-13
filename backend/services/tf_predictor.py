@@ -33,7 +33,9 @@ def _load(name: str):
         )
 
     model = tf.keras.models.load_model(model_path)
-    class_names = labels_path.read_text().strip().splitlines() if labels_path.is_file() else []
+    class_names = (
+        labels_path.read_text().strip().splitlines() if labels_path.is_file() else []
+    )
 
     # Derive the model's expected (height, width) so inference always matches how the
     # model was trained (e.g. 160x160 leaf model vs 224x224 skin model).
@@ -61,7 +63,9 @@ def _quality_metrics(probs: np.ndarray) -> dict:
         "top_confidence": round(top_confidence, 4),
         "margin": round(margin, 4),
         "normalized_entropy": round(normalized_entropy, 4),
-        "is_uncertain": top_confidence < 0.45 or margin < 0.12 or normalized_entropy > 0.88,
+        "is_uncertain": top_confidence < 0.45
+        or margin < 0.12
+        or normalized_entropy > 0.88,
     }
 
 
@@ -83,9 +87,9 @@ def predict(name: str, image_bytes: bytes, img_size: tuple | None = None) -> dic
     img = tf.image.decode_image(image_bytes, channels=3, expand_animations=False)
     img = tf.image.resize(img, img_size)
     img = tf.cast(img, tf.float32) / 255.0
-    img = tf.expand_dims(img, 0)   # (1, H, W, 3)
+    img = tf.expand_dims(img, 0)  # (1, H, W, 3)
 
-    probs = model.predict(img, verbose=0)[0]   # shape (num_classes,)
+    probs = model.predict(img, verbose=0)[0]  # shape (num_classes,)
     top_idx = int(np.argmax(probs))
 
     predicted_class = class_names[top_idx] if class_names else str(top_idx)
@@ -99,7 +103,9 @@ def predict(name: str, image_bytes: bytes, img_size: tuple | None = None) -> dic
     return {
         "predicted_class": predicted_class,
         "confidence": round(confidence, 4),
-        "all_probs": {k: round(v, 4) for k, v in sorted(all_probs.items(), key=lambda x: -x[1])},
+        "all_probs": {
+            k: round(v, 4) for k, v in sorted(all_probs.items(), key=lambda x: -x[1])
+        },
         "quality": quality,
     }
 

@@ -31,7 +31,9 @@ import shutil
 import sys
 from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger("HerbalAI.MergeSkin")
 
 # Ensure the backend package root is importable when run as a script.
@@ -47,10 +49,28 @@ IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}  # webp excluded (unreliable in TF 
 # skin_disease model predicts, and it aligns with the knowledge-base disease_mapping keys
 # (acne / eczema / psoriasis / rosacea / vitiligo) that the recommender resolves.
 CANONICAL = [
-    "acne", "actinic_keratosis", "benign_tumors", "bullous", "candidiasis", "drugeruption",
-    "eczema", "infestations_bites", "lichen", "lupus", "moles", "psoriasis", "rosacea",
-    "seborrh_keratoses", "skincancer", "sun_sunlight_damage", "tinea", "unknown_normal",
-    "vascular_tumors", "vasculitis", "vitiligo", "warts",
+    "acne",
+    "actinic_keratosis",
+    "benign_tumors",
+    "bullous",
+    "candidiasis",
+    "drugeruption",
+    "eczema",
+    "infestations_bites",
+    "lichen",
+    "lupus",
+    "moles",
+    "psoriasis",
+    "rosacea",
+    "seborrh_keratoses",
+    "skincancer",
+    "sun_sunlight_damage",
+    "tinea",
+    "unknown_normal",
+    "vascular_tumors",
+    "vasculitis",
+    "vitiligo",
+    "warts",
 ]
 CANONICAL_SET = set(CANONICAL)
 
@@ -73,12 +93,12 @@ SYNONYMS = {
     # dataset 4 (Turkish, "N. Name" folders)
     "ekzama": "eczema",
     "akne": "acne",
-    "pigment": "sun_sunlight_damage",   # closest of the 22 canonical classes
+    "pigment": "sun_sunlight_damage",  # closest of the 22 canonical classes
     "benign": "benign_tumors",
     "malign": "skincancer",
     # dataset 5 (Roboflow)
     "eksim": "eczema",
-    "panu": "tinea",                    # panu = tinea versicolor
+    "panu": "tinea",  # panu = tinea versicolor
     "rosacea": "rosacea",
     # dataset 2 (CSV-indexed cosmetic, only the acne type maps)
     "acne": "acne",
@@ -88,9 +108,9 @@ SYNONYMS = {
 def normalize(name: str) -> str:
     """Turn a raw folder/class name into a normalised label."""
     label = (name or "").strip().lower()
-    label = re.sub(r"[^a-z0-9]+", "_", label)   # spaces / dots / hyphens -> _
+    label = re.sub(r"[^a-z0-9]+", "_", label)  # spaces / dots / hyphens -> _
     label = re.sub(r"^_+|_+$", "", label)
-    label = re.sub(r"^(\d+)_", "", label)        # strip leading "3_" etc.
+    label = re.sub(r"^(\d+)_", "", label)  # strip leading "3_" etc.
     return label
 
 
@@ -103,7 +123,9 @@ def map_label(raw_name: str):
 
 
 def collect_images(folder: Path) -> list[Path]:
-    return [p for p in folder.rglob("*") if p.suffix.lower() in IMG_EXTS and p.is_file()]
+    return [
+        p for p in folder.rglob("*") if p.suffix.lower() in IMG_EXTS and p.is_file()
+    ]
 
 
 def main(source_root: Path, max_per_class: int, force: bool) -> int:
@@ -118,8 +140,14 @@ def main(source_root: Path, max_per_class: int, force: bool) -> int:
         ("ds3", source_root / "skin disease 3" / "skin_disease"),
         ("ds4_train", source_root / "skin disease 4" / "kaggle" / "train"),
         ("ds5_train", source_root / "skin disease 5" / "train"),
-        ("ds1_train", source_root / "skin disease 1" / "skin-disease-datasaet" / "train_set"),
-        ("ds1_test", source_root / "skin disease 1" / "skin-disease-datasaet" / "test_set"),
+        (
+            "ds1_train",
+            source_root / "skin disease 1" / "skin-disease-datasaet" / "train_set",
+        ),
+        (
+            "ds1_test",
+            source_root / "skin disease 1" / "skin-disease-datasaet" / "test_set",
+        ),
         ("ds2", source_root / "skin disease 2" / "files"),
     ]
 
@@ -133,9 +161,7 @@ def main(source_root: Path, max_per_class: int, force: bool) -> int:
             logger.warning("Removing existing %s for a clean merge.", DEST)
             shutil.rmtree(DEST)
         else:
-            logger.warning(
-                "%s already exists. Use --force to rebuild. Aborting.", DEST
-            )
+            logger.warning("%s already exists. Use --force to rebuild. Aborting.", DEST)
             return 0
 
     # canonical -> {"sources": {tag: orig_folder}, "images": [Path,...]}
@@ -196,7 +222,10 @@ def main(source_root: Path, max_per_class: int, force: bool) -> int:
 
     logger.info(
         "Merge complete: %d/%d canonical classes, %d images -> %s",
-        final_count, len(CANONICAL), total_images, DEST,
+        final_count,
+        len(CANONICAL),
+        total_images,
+        DEST,
     )
     logger.info("Manifest written to %s", DEST.parent / "merge_manifest.json")
     if skipped:
@@ -205,17 +234,23 @@ def main(source_root: Path, max_per_class: int, force: bool) -> int:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Merge skin datasets into prepared layout")
+    parser = argparse.ArgumentParser(
+        description="Merge skin datasets into prepared layout"
+    )
     parser.add_argument(
-        "--source", default=r"D:/skin datasets",
+        "--source",
+        default=r"D:/skin datasets",
         help="Root directory containing the 'skin disease N' folders",
     )
     parser.add_argument(
-        "--max-per-class", type=int, default=MAX_PER_CLASS,
+        "--max-per-class",
+        type=int,
+        default=MAX_PER_CLASS,
         help="Maximum images kept per canonical class (default 700)",
     )
     parser.add_argument(
-        "--force", action="store_true",
+        "--force",
+        action="store_true",
         help="Rebuild even if prepared/ already exists",
     )
     args = parser.parse_args()
