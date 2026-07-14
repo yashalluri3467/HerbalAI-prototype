@@ -46,7 +46,11 @@ def main() -> int:
     print(f"OK:   model present at {model_path}")
 
     # 2. Class set check (order is alphabetical: leaf, other, skin).
-    labels = (_BACKEND_DIR / "models" / "domain_gate" / "class_names.txt").read_text().split()
+    labels = (
+        (_BACKEND_DIR / "models" / "domain_gate" / "class_names.txt")
+        .read_text()
+        .split()
+    )
     if set(labels) != {"skin", "leaf", "other"}:
         failures.append(f"class set is {labels}, expected {{skin, leaf, other}}")
     else:

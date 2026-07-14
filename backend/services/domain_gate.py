@@ -74,7 +74,9 @@ def _load():
         pass
 
     _cache = (model, class_names, input_size)
-    logger.info("Domain-gate model loaded (classes=%s, size=%s)", class_names, input_size)
+    logger.info(
+        "Domain-gate model loaded (classes=%s, size=%s)", class_names, input_size
+    )
     return _cache
 
 
@@ -86,7 +88,9 @@ def _predict_probs(model, image_bytes: bytes, input_size: tuple) -> np.ndarray:
     return model.predict(img, verbose=0)[0]
 
 
-def is_valid_domain(expected: str, image_bytes: bytes, threshold: float = GATE_THRESHOLD) -> bool:
+def is_valid_domain(
+    expected: str, image_bytes: bytes, threshold: float = GATE_THRESHOLD
+) -> bool:
     """Return True if ``image_bytes`` depicts the ``expected`` domain.
 
     ``expected`` is one of ``"skin"`` / ``"leaf"``. The check passes when the

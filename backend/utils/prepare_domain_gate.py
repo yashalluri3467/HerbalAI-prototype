@@ -48,7 +48,9 @@ def _is_image(p: pathlib.Path) -> bool:
     return p.is_file() and p.suffix.lower() in IMAGE_SUFFIXES
 
 
-def _copy_sample(src_class_dir: pathlib.Path, dest_class_dir: pathlib.Path, cap: int) -> int:
+def _copy_sample(
+    src_class_dir: pathlib.Path, dest_class_dir: pathlib.Path, cap: int
+) -> int:
     dest_class_dir.mkdir(parents=True, exist_ok=True)
     images = [p for p in src_class_dir.rglob("*") if _is_image(p)]
     _random.shuffle(images)
@@ -77,7 +79,9 @@ def _copy_all(src_dir: pathlib.Path, dest_class_dir: pathlib.Path) -> int:
     return len(images)
 
 
-def _generate_synthetic_other(dest: pathlib.Path, count: int = 3000, size: int = 224) -> int:
+def _generate_synthetic_other(
+    dest: pathlib.Path, count: int = 3000, size: int = 224
+) -> int:
     """Generate a diverse, fully-offline 'other' set (no downloads).
 
     Produces photo-like variety covering the semantics a user might wrongly
@@ -126,7 +130,9 @@ def _generate_synthetic_other(dest: pathlib.Path, count: int = 3000, size: int =
                 x0, x1 = int(min(xa, xb)), int(max(xa, xb))
                 y0, y1 = int(min(ya, yb)), int(max(ya, yb))
                 d.ellipse([x0, y0, x1, y1], fill=col)
-                d.rectangle([x0, y0, x1, y1], outline=col, width=int(rng.integers(2, 8)))
+                d.rectangle(
+                    [x0, y0, x1, y1], outline=col, width=int(rng.integers(2, 8))
+                )
             img = np.asarray(layer)
         elif kind == "scene":
             sky = rng.integers(120, 230, 3)
@@ -154,7 +160,12 @@ def _generate_synthetic_other(dest: pathlib.Path, count: int = 3000, size: int =
                     rng.choice(list("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
                     for _ in range(rng.integers(4, 12))
                 )
-                d.text((x, y), txt, fill=tuple(int(v) for v in rng.integers(0, 120, 3)), font=font)
+                d.text(
+                    (x, y),
+                    txt,
+                    fill=tuple(int(v) for v in rng.integers(0, 120, 3)),
+                    font=font,
+                )
             img = np.asarray(layer)
         else:  # mixed
             a = tint(smooth_noise(int(rng.choice([8, 20]))))
@@ -164,10 +175,24 @@ def _generate_synthetic_other(dest: pathlib.Path, count: int = 3000, size: int =
             if rng.random() < 0.4:
                 layer = Image.fromarray(img)
                 d = ImageDraw.Draw(layer)
-                col = (tuple(int(v) for v in rng.integers(180, 240, 3)) if rng.random() < 0.5
-                       else (int(rng.integers(20, 90)), int(rng.integers(120, 200)), int(rng.integers(40, 110))))
-                d.ellipse([int(rng.integers(0, size // 2)), int(rng.integers(0, size // 2)),
-                           int(rng.integers(size // 2, size)), int(rng.integers(size // 2, size))], fill=col)
+                col = (
+                    tuple(int(v) for v in rng.integers(180, 240, 3))
+                    if rng.random() < 0.5
+                    else (
+                        int(rng.integers(20, 90)),
+                        int(rng.integers(120, 200)),
+                        int(rng.integers(40, 110)),
+                    )
+                )
+                d.ellipse(
+                    [
+                        int(rng.integers(0, size // 2)),
+                        int(rng.integers(0, size // 2)),
+                        int(rng.integers(size // 2, size)),
+                        int(rng.integers(size // 2, size)),
+                    ],
+                    fill=col,
+                )
                 img = np.asarray(layer)
 
         Image.fromarray(img).save(dest / f"other_{made:05d}.png")
@@ -225,12 +250,8 @@ def prepare_domain_gate() -> pathlib.Path:
     skin_cap = max(5, TARGET_PER_GROUP // max(1, len(skin_classes)))
     leaf_cap = max(5, TARGET_PER_GROUP // max(1, len(leaf_classes)))
 
-    skin_total = sum(
-        _copy_sample(c, PREPARED / "skin", skin_cap) for c in skin_classes
-    )
-    leaf_total = sum(
-        _copy_sample(c, PREPARED / "leaf", leaf_cap) for c in leaf_classes
-    )
+    skin_total = sum(_copy_sample(c, PREPARED / "skin", skin_cap) for c in skin_classes)
+    leaf_total = sum(_copy_sample(c, PREPARED / "leaf", leaf_cap) for c in leaf_classes)
     copied_other = _copy_all(RAW_OTHER, PREPARED / "other")
 
     print(
