@@ -9,9 +9,9 @@
       "device": "CPU",
       "num_classes": 22,
       "total_params": 2286166,
-      "accuracy": 0.4458,
-      "macro_f1": 0.4376,
-      "weighted_f1": 0.4493
+      "accuracy": 0.4787,
+      "macro_f1": 0.4736,
+      "weighted_f1": 0.4832
     },
     "efficientnetb0": {
       "dataset": "skin_disease",
@@ -21,9 +21,9 @@
       "device": "CPU",
       "num_classes": 22,
       "total_params": 4077753,
-      "accuracy": 0.4658,
-      "macro_f1": 0.4549,
-      "weighted_f1": 0.4649
+      "accuracy": 0.4835,
+      "macro_f1": 0.4764,
+      "weighted_f1": 0.4871
     }
   }
 }

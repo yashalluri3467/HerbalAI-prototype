@@ -11,15 +11,15 @@
 
 | Class | Precision | Recall | F1 | Support |
 | --- | ---: | ---: | ---: | ---: |
-| leaf | 0.993 | 0.995 | 0.994 | 437 |
+| leaf | 0.991 | 0.998 | 0.994 | 437 |
 | other | 0.998 | 1.000 | 0.999 | 630 |
-| skin | 0.996 | 0.992 | 0.994 | 496 |
+| skin | 0.998 | 0.990 | 0.994 | 496 |
 
 ## Confusion matrix
 
 ![confusion matrix](domain_gate/confusion_matrix.png)
 
  | leaf | other | skin | 
- | leaf | 435 | 0 | 3 | 
+ | leaf | 436 | 0 | 4 | 
  | other | 0 | 630 | 1 | 
- | skin | 2 | 0 | 492 | 
+ | skin | 1 | 0 | 491 | 
