@@ -24,8 +24,6 @@ import pathlib
 import random
 import shutil
 
-import numpy as np
-
 # Always resolve relative to backend/ regardless of CWD.
 _BACKEND_DIR = pathlib.Path(__file__).resolve().parent.parent
 BASE_DATA_DIR = _BACKEND_DIR / "data"

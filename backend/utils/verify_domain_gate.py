@@ -17,8 +17,6 @@ Exits non-zero if any check fails (handy for CI).
 import pathlib
 import sys
 
-import numpy as np
-
 _BACKEND_DIR = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_BACKEND_DIR))
 
