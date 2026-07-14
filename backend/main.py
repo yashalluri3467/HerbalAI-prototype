@@ -35,6 +35,23 @@ async def lifespan(app: FastAPI):
         logger.info("Session-history database initialized")
     else:
         logger.warning("DATABASE_URL not set - session history will NOT be persisted")
+
+    # Warm the in-memory model cache so the first prediction after a
+    # deploy is not delayed by lazy model loading. Failures are logged
+    # and never fatal. Disable with WARM_UP_MODELS=false.
+    if os.getenv("WARM_UP_MODELS", "true").lower() != "false":
+        try:
+            from services import tf_predictor
+
+            for _name in tf_predictor.available_datasets():
+                try:
+                    tf_predictor._load(_name)
+                    logger.info("Warmed model: %s", _name)
+                except Exception as exc:  # pragma: no cover
+                    logger.warning("Could not warm model %s: %s", _name, exc)
+        except Exception as exc:  # pragma: no cover
+            logger.warning("Model warm-up skipped: %s", exc)
+
     yield
 
 

@@ -147,3 +147,20 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 - LLM summary: `backend/services/llm_service.py`
 - Knowledge base: `backend/database/knowledge_base.py`
 - Deployment verification: `backend/verify_backend.py`
+
+---
+
+## ☁️ Deploy on AWS (ECS Fargate + S3 / CloudFront)
+
+For production hosting, HerbalAI ships a complete AWS deployment (not Render/Vercel):
+
+- **Backend** → ECR image → **ECS Fargate** service behind an ALB (ACM TLS + WAF rate-limiting) → RDS PostgreSQL (private subnets, TLS) + Secrets Manager.
+- **Frontend** → static build in **S3**, served via **CloudFront** (ACM TLS, OAC).
+- **CI/CD** → GitHub Actions (OIDC) + **Terraform** in `infra/` (state in S3 + DynamoDB lock).
+- **Zero-downtime** rolling deploys; **Trivy** image scans in CI; **CloudWatch** logs.
+
+Step-by-step (bootstrap, GitHub variables, secrets, domain/TLS, rollback, cost):
+see **[docs/aws-deployment.md](docs/aws-deployment.md)**.
+
+> The `k8s/` manifests remain valid for **local** Kind/Docker-Desktop development only;
+> the production path is ECS/Fargate per the above.

@@ -3,12 +3,9 @@ name: HerbalAI CI
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
@@ -58,11 +55,19 @@ jobs:
           pip install bandit
           bandit -r . --severity-level high
 
+      - name: Pytest smoke
+        run: |
+          pip install pytest httpx
+          pytest tests -q -p no:cacheprovider
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
+    env:
+      # Baked into the build; CI distributes the built `dist/` to S3 later.
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
 

@@ -1,0 +1,61 @@
+name: HerbalAI IaC
+
+# Terraform plan on PRs, apply on main. Uses GitHub OIDC (no static keys).
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths: ["infra/**"]
+  push:
+    branches: [main]
+    paths: ["infra/**"]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  REGION: us-east-1
+  TF_VERSION: "1.9.5"
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    concurrency:
+      group: terraform-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.REGION }}
+          role-session-name: terraform
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: fmt
+        run: terraform fmt -check -recursive
+
+      - name: init
+        run: terraform init
+
+      - name: validate
+        run: terraform validate
+
+      - name: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -var-file=terraform.tfvars -no-color
+
+      - name: apply
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: terraform apply -var-file=terraform.tfvars -auto-approve
