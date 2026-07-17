@@ -297,9 +297,11 @@ async def predict_skin(file: UploadFile = File(...)):
             "classification_status": (
                 "healthy"
                 if is_healthy
-                else "uncertain"
-                if model_quality(result).get("is_uncertain")
-                else "classified"
+                else (
+                    "uncertain"
+                    if model_quality(result).get("is_uncertain")
+                    else "classified"
+                )
             ),
             "is_healthy": is_healthy,
             "prediction_source": "skin_disease_dataset",
