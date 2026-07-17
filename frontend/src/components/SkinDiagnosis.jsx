@@ -150,10 +150,13 @@ export default function SkinDiagnosis({ onAddHistory }) {
             <div className="card-header" style={{ marginBottom: '0.5rem' }}>
               <div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <span className="badge badge-success">Assessment Calibrated</span>
+                  <span className="badge badge-success">
+                    {result.is_healthy ? "Healthy Skin Detected" : "Assessment Calibrated"}
+                  </span>
                 </div>
                 <h2 style={{ fontSize: '1.75rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  Condition Identified: <span style={{ color: 'var(--primary)' }}>{result.disease}</span>
+                  {result.is_healthy ? "No Skin Condition Detected" : "Condition Identified:"}{" "}
+                  <span style={{ color: 'var(--primary)' }}>{result.disease}</span>
                 </h2>
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
@@ -165,10 +168,19 @@ export default function SkinDiagnosis({ onAddHistory }) {
 
             {/* Herbal Recommendations */}
             <div>
+              {result.is_healthy ? (
+                <div className="rec-item" style={{ borderLeft: '3px solid #10b981', background: 'rgba(16, 185, 129, 0.04)', padding: '1rem 1.25rem', borderRadius: '8px' }}>
+                  <div className="rec-name" style={{ fontSize: '1.25rem' }}>No Treatment Needed</div>
+                  <p className="detail-value" style={{ margin: '0.75rem 0 0', fontStyle: 'italic', lineHeight: '1.5' }}>
+                    Your skin appears healthy. No herbal treatment is recommended at this time.
+                  </p>
+                </div>
+              ) : (
+                <>
               <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
                 Recommended Ayurvedic Herbs
               </h3>
-              
+
               <div className="rec-list">
                 {result.recommendations.map((rec, index) => (
                   <div key={rec.name} className="rec-item">
@@ -234,10 +246,12 @@ export default function SkinDiagnosis({ onAddHistory }) {
                   <p className="upload-subtext">No matching knowledge-base records are available.</p>
                 )}
               </div>
+              </>
+              )}
             </div>
 
             {/* LLM AI Supplement */}
-            {!result.llm_summary && result.llm_error && (
+            {!result.is_healthy && !result.llm_summary && result.llm_error && (
               <div className="alert-box alert-info" style={{ borderColor: 'rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.05)' }}>
                 <AlertCircle size={20} style={{ color: '#ef4444' }} />
                 <div className="alert-text">

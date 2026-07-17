@@ -149,10 +149,3 @@ backend/weights/
 
 # Root package-lock
 package-lock.json
-
-# Terraform (keep .terraform.lock.hcl committed; ignore cache + real tfvars)
-.terraform/
-*.tfvars
-crash.log
-*.tfstate
-*.tfstate.backup

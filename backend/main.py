@@ -156,6 +156,36 @@ def model_quality(result: dict) -> dict:
     return result.get("quality", {})
 
 
+# The skin model's "healthy / clear skin" class is literally named this.
+SKIN_NORMAL_CLASS = "unknown_normal"
+HEALTHY_SKIN_LABEL = "Healthy Skin"
+
+
+def _prettify_label(raw: str) -> str:
+    """Convert a raw model class name into a human-readable label.
+
+    e.g. 'seborrh_keratoses' -> 'Seborrh Keratoses'.
+    """
+    return raw.replace("_", " ").strip().title()
+
+
+def _resolve_skin_disease(result: dict) -> tuple[str, bool]:
+    """Map a skin_disease model result to a display disease and a healthy flag.
+
+    The model's ``unknown_normal`` class (clear / healthy skin) becomes
+    "Healthy Skin". A low-confidence / uncertain prediction is also treated as
+    healthy skin, because the classifier cannot confidently name any condition —
+    which is what a clear-skin photo typically produces. This prevents random
+    low-confidence disease names from being shown for clear skin. All other
+    disease names are prettified for display.
+    """
+    raw = result["predicted_class"]
+    is_uncertain = result.get("quality", {}).get("is_uncertain", False)
+    if raw == SKIN_NORMAL_CLASS or is_uncertain:
+        return HEALTHY_SKIN_LABEL, True
+    return _prettify_label(raw), False
+
+
 def dataset_explanation(recommendation: dict, herb: Optional[dict]) -> dict:
     return {
         "reasoning": "; ".join(recommendation.get("benefits", [])),
@@ -233,7 +263,7 @@ async def predict_skin(file: UploadFile = File(...)):
                 "Please upload an image of the affected skin area only.",
             )
         result = tf_predict("skin_disease", contents)
-        disease = result["predicted_class"]
+        disease, is_healthy = _resolve_skin_disease(result)
         confidence = result["confidence"]
         original, enhanced = process_image(contents)
 
@@ -265,10 +295,15 @@ async def predict_skin(file: UploadFile = File(...)):
             "top_predictions": top_predictions(result),
             "model_quality": model_quality(result),
             "classification_status": (
-                "uncertain"
-                if model_quality(result).get("is_uncertain")
-                else "classified"
+                "healthy"
+                if is_healthy
+                else (
+                    "uncertain"
+                    if model_quality(result).get("is_uncertain")
+                    else "classified"
+                )
             ),
+            "is_healthy": is_healthy,
             "prediction_source": "skin_disease_dataset",
             "original_image": image_to_base64(original),
             "enhanced_image": (
@@ -378,7 +413,7 @@ async def predict_joint(
             )
         skin_result = tf_predict("skin_disease", skin_contents)
         leaf_result = tf_predict("medicinal_leaves", leaf_contents)
-        disease = skin_result["predicted_class"]
+        disease, _skin_is_healthy = _resolve_skin_disease(skin_result)
         leaf_quality = model_quality(leaf_result)
         leaf_uncertain = leaf_quality.get("is_uncertain", False)
         herb_name = None if leaf_uncertain else leaf_result["predicted_class"]

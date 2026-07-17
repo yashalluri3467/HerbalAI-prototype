@@ -129,7 +129,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 > [!TIP]
-> MobileNetV2 is recommended for low-cost CPU cloud deployments (Render, AWS t3.medium,
+> MobileNetV2 is recommended for low-cost CPU cloud deployments (Render,
 > DigitalOcean Basic). If you have dedicated GPU hardware (CUDA), EfficientNetB0 is selected
 > automatically when it wins on validation macro-F1.
 
@@ -150,17 +150,8 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 ---
 
-## ☁️ Deploy on AWS (ECS Fargate + S3 / CloudFront)
+## 🚀 Deploy
 
-For production hosting, HerbalAI ships a complete AWS deployment (not Render/Vercel):
-
-- **Backend** → ECR image → **ECS Fargate** service behind an ALB (ACM TLS + WAF rate-limiting) → RDS PostgreSQL (private subnets, TLS) + Secrets Manager.
-- **Frontend** → static build in **S3**, served via **CloudFront** (ACM TLS, OAC).
-- **CI/CD** → GitHub Actions (OIDC) + **Terraform** in `infra/` (state in S3 + DynamoDB lock).
-- **Zero-downtime** rolling deploys; **Trivy** image scans in CI; **CloudWatch** logs.
-
-Step-by-step (bootstrap, GitHub variables, secrets, domain/TLS, rollback, cost):
-see **[docs/aws-deployment.md](docs/aws-deployment.md)**.
-
-> The `k8s/` manifests remain valid for **local** Kind/Docker-Desktop development only;
-> the production path is ECS/Fargate per the above.
+For local/cluster deployment options (Docker Compose, Kubernetes), see
+`CLIENT_DELIVERY.md` (§5 and §6). The `k8s/` manifests are valid for local
+Kind/Docker-Desktop development.
