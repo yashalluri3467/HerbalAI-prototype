@@ -122,19 +122,3 @@ Both models share one trainer (`backend/utils/train_tf_models.py`) and one predi
 Training uses ImageNet transfer learning with a frozen-then-fine-tuned backbone, class
 weights for imbalance, early stopping, and a learning-rate plateau reducer. A per-class
 benchmark report is written next to each model.
-
----
-
-## ☁️ Deploy on AWS (ECS Fargate + S3 / CloudFront)
-
-HerbalAI deploys to AWS as: the **backend on ECS Fargate** (image in ECR, fronted by an
-ALB with ACM + WAF, talking to **RDS PostgreSQL** and **Secrets Manager**, logging to CloudWatch) and
-the **frontend as a static SPA on S3 + CloudFront**. CI/CD is **GitHub Actions** (OIDC, no static
-keys) driven by **Terraform** (IaC under `infra/`).
-
-Runtime env (injected by ECS, not committed): `PORT` (8000), `FRONTEND_URL`
-(CORS allow-list for the CloudFront domain), and `OPENROUTER_API_KEY` + `DATABASE_URL`
-(from Secrets Manager).
-
-Full step-by-step, cost estimate, rollback, and troubleshooting:
-**[docs/aws-deployment.md](docs/aws-deployment.md)**.
