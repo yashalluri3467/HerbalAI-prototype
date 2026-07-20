@@ -24,6 +24,9 @@ import services.llm_service as llm_service
 
 load_dotenv()
 
+# Quiet TensorFlow's noisy CPU feature-guard / absl logs (CPU-only deploy).
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("HerbalAI")
 
@@ -38,8 +41,11 @@ async def lifespan(app: FastAPI):
 
     # Warm the in-memory model cache so the first prediction after a
     # deploy is not delayed by lazy model loading. Failures are logged
-    # and never fatal. Disable with WARM_UP_MODELS=false.
-    if os.getenv("WARM_UP_MODELS", "true").lower() != "false":
+    # and never fatal. Disabled by default (WARM_UP_MODELS=false) so the
+    # server binds its port immediately and stays within tight RAM caps
+    # (e.g. Render's 512 MiB free tier); set WARM_UP_MODELS=true on larger
+    # instances to pre-load models at startup instead.
+    if os.getenv("WARM_UP_MODELS", "false").lower() != "false":
         try:
             from services import tf_predictor
 

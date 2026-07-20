@@ -4,11 +4,13 @@ numpy
 pydantic
 pillow
 python-multipart
-matplotlib
 requests
 python-dotenv
 opencv-python-headless
-tensorflow
+# CPU-only TensorFlow wheel: smaller, no CUDA stubs, correct for render's CPU free tier.
+tensorflow-cpu
+# NOTE: matplotlib is a TRAINING-ONLY dependency (utils/train_*). It is intentionally
+# excluded from the runtime image; install it separately when retraining models.
 
 # Session history persistence (Neon Postgres)
 sqlalchemy[asyncio]

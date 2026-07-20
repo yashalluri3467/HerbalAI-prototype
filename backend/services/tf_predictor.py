@@ -8,20 +8,23 @@ Each model lives at:
 Models are loaded lazily on first use and cached in memory.
 """
 
+import functools
+import os
 import pathlib
 import numpy as np
 import tensorflow as tf
 
 _MODELS_DIR = pathlib.Path(__file__).resolve().parent.parent / "models"
 
-# Cache: dataset_name → (model, class_names)
-_cache: dict = {}
+# Bounded LRU cache of loaded models. The default of 1 keeps at most one classifier
+# resident at a time (alongside the always-cached domain_gate in services/domain_gate.py)
+# so memory stays bounded on tight-RAM deployments (e.g. Render's 512 MiB free tier).
+# Raise MODEL_CACHE_MAX on larger instances to keep more models hot.
+_MODEL_CACHE_MAX = int(os.getenv("MODEL_CACHE_MAX", "1"))
 
 
+@functools.lru_cache(maxsize=_MODEL_CACHE_MAX)
 def _load(name: str):
-    if name in _cache:
-        return _cache[name]
-
     model_path = _MODELS_DIR / name / "model.keras"
     labels_path = _MODELS_DIR / name / "class_names.txt"
 
@@ -47,8 +50,7 @@ def _load(name: str):
     except (AttributeError, IndexError, TypeError):
         pass
 
-    _cache[name] = (model, class_names, input_size)
-    return _cache[name]
+    return (model, class_names, input_size)
 
 
 def _quality_metrics(probs: np.ndarray) -> dict:
