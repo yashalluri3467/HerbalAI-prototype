@@ -140,7 +140,16 @@ class AppSettings(BaseModel):
     image_enhancement_enabled: bool = True
 
 
-app_settings = AppSettings()
+# Read feature toggles from environment (defaulting to True for backwards compatibility)
+_knowledge_base_enabled = os.getenv("KNOWLEDGE_BASE_ENABLED", "true").lower() == "true"
+_llm_suggestions_enabled = os.getenv("LLM_SUGGESTIONS_ENABLED", "true").lower() == "true"
+_image_enhancement_enabled = os.getenv("IMAGE_ENHANCEMENT_ENABLED", "true").lower() == "true"
+
+app_settings = AppSettings(
+    knowledge_base_enabled=_knowledge_base_enabled,
+    llm_suggestions_enabled=_llm_suggestions_enabled,
+    image_enhancement_enabled=_image_enhancement_enabled,
+)
 
 
 def image_to_base64(image_bgr) -> str:
