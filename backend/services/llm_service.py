@@ -76,7 +76,7 @@ def generate_diagnosis_summary(disease: str, herbs: list) -> str:
     if not resolved:
         _set_last_error(
             f"No knowledge-base entries for the recommended herbs {herbs}; "
-            "summary omitted to avoid fabrication."
+            "summary omitted to avoid fabrication.Consult a Doctor"
         )
         return None
 

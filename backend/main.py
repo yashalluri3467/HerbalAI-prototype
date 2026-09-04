@@ -123,7 +123,13 @@ _frontend_urls = os.getenv("FRONTEND_URL", "").strip()
 allow_origins = (
     [u.strip() for u in _frontend_urls.split(",") if u.strip()]
     if _frontend_urls
-    else ["*"]
+    else [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*",
+    ]
 )
 app.add_middleware(
     CORSMiddleware,
@@ -142,8 +148,12 @@ class AppSettings(BaseModel):
 
 # Read feature toggles from environment (defaulting to True for backwards compatibility)
 _knowledge_base_enabled = os.getenv("KNOWLEDGE_BASE_ENABLED", "true").lower() == "true"
-_llm_suggestions_enabled = os.getenv("LLM_SUGGESTIONS_ENABLED", "true").lower() == "true"
-_image_enhancement_enabled = os.getenv("IMAGE_ENHANCEMENT_ENABLED", "true").lower() == "true"
+_llm_suggestions_enabled = (
+    os.getenv("LLM_SUGGESTIONS_ENABLED", "true").lower() == "true"
+)
+_image_enhancement_enabled = (
+    os.getenv("IMAGE_ENHANCEMENT_ENABLED", "true").lower() == "true"
+)
 
 app_settings = AppSettings(
     knowledge_base_enabled=_knowledge_base_enabled,

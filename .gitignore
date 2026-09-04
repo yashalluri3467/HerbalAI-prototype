@@ -149,3 +149,13 @@ backend/weights/
 
 # Root package-lock
 package-lock.json
+
+# Cloudflare Tunnel & Helper Scripts
+TUNNEL_GUIDE.md
+cloudflared-config.yml
+docker-compose.tunnel.yml
+quick-tunnel.ps1
+tunnel-setup.ps1
+tunnel-setup.sh
+watch_health.ps1
+tools/

@@ -1,0 +1,401 @@
+{
+  "metadata": {
+    "source": "class_names.txt + prepared training images + herbal_knowledge_base.json",
+    "num_diseases": 22,
+    "herbal_link_note": "remedies are cross-referenced from herbal_knowledge_base.json via an explicit alias map; classes with no mapped remedy have an empty remedies list."
+  },
+  "diseases": [
+    {
+      "id": "acne",
+      "label": "Acne",
+      "training_images": 700,
+      "remedies": [
+        {
+          "herb": "Neem",
+          "efficacy": 96,
+          "weight": 0.98,
+          "evidence_level": "High (Multiple Clinical Trials)",
+          "preparation_method": "Grind fresh neem leaves with water to form a paste and apply to affected areas, or dilute neem oil (2-3 drops) in coconut oil."
+        },
+        {
+          "herb": "Tulsi",
+          "efficacy": 92,
+          "weight": 0.95,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Crush tulsi leaves and extract the juice. Apply this juice directly using a cotton ball to acne lesions."
+        },
+        {
+          "herb": "Turmeric",
+          "efficacy": 88,
+          "weight": 0.9,
+          "evidence_level": "High (Strong Evidence)",
+          "preparation_method": "Mix 1/2 teaspoon of turmeric powder with yogurt or honey to form a paste. Apply for 10-15 minutes and rinse."
+        }
+      ]
+    },
+    {
+      "id": "actinic_keratosis",
+      "label": "Actinic Keratosis",
+      "training_images": 700,
+      "remedies": []
+    },
+    {
+      "id": "benign_tumors",
+      "label": "Benign Tumors",
+      "training_images": 700,
+      "remedies": []
+    },
+    {
+      "id": "bullous",
+      "label": "Bullous Disease",
+      "training_images": 559,
+      "remedies": []
+    },
+    {
+      "id": "candidiasis",
+      "label": "Candidiasis",
+      "training_images": 275,
+      "remedies": [
+        {
+          "herb": "Karanj",
+          "efficacy": 94,
+          "weight": 0.95,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Dilute Karanj oil with neem oil or coconut oil in a 1:5 ratio and apply to affected patches."
+        },
+        {
+          "herb": "Neem",
+          "efficacy": 90,
+          "weight": 0.92,
+          "evidence_level": "High (Multiple Clinical Trials)",
+          "preparation_method": "Grind fresh neem leaves with water to form a paste and apply to affected areas, or dilute neem oil (2-3 drops) in coconut oil."
+        },
+        {
+          "herb": "Harra",
+          "efficacy": 82,
+          "weight": 0.84,
+          "evidence_level": "Medium",
+          "preparation_method": "Make a fine paste of Harra powder with water and apply as a spot treatment on minor wounds or rashes."
+        },
+        {
+          "herb": "Tulsi",
+          "efficacy": 80,
+          "weight": 0.85,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Crush tulsi leaves and extract the juice. Apply this juice directly using a cotton ball to acne lesions."
+        }
+      ]
+    },
+    {
+      "id": "drugeruption",
+      "label": "Drug Eruption",
+      "training_images": 608,
+      "remedies": []
+    },
+    {
+      "id": "eczema",
+      "label": "Eczema",
+      "training_images": 700,
+      "remedies": [
+        {
+          "herb": "Karanj",
+          "efficacy": 92,
+          "weight": 0.94,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Dilute Karanj oil with neem oil or coconut oil in a 1:5 ratio and apply to affected patches."
+        },
+        {
+          "herb": "Aloe Vera",
+          "efficacy": 88,
+          "weight": 0.9,
+          "evidence_level": "High (Widely Researched)",
+          "preparation_method": "Extract fresh gel from an Aloe leaf and apply directly to the skin. No dilution required."
+        },
+        {
+          "herb": "Giloy",
+          "efficacy": 86,
+          "weight": 0.89,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Boil Giloy stems in water to prepare a decoction, let it cool, and wash the affected skin areas."
+        },
+        {
+          "herb": "Bhringraj",
+          "efficacy": 84,
+          "weight": 0.85,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Extract juice from crushed fresh Bhringraj leaves and apply to wounds, or apply Bhringraj leaf powder paste."
+        },
+        {
+          "herb": "Mahua",
+          "efficacy": 80,
+          "weight": 0.82,
+          "evidence_level": "Medium-Low (Traditional Usage)",
+          "preparation_method": "Apply cold-pressed Mahua seed oil directly onto patches of dry skin, or mix with beeswax to form a salve."
+        },
+        {
+          "herb": "Palash",
+          "efficacy": 80,
+          "weight": 0.8,
+          "evidence_level": "Medium-Low",
+          "preparation_method": "Infuse Palash flowers in hot water to create a soothing rinse, or crush flowers into a paste."
+        },
+        {
+          "herb": "Bael",
+          "efficacy": 78,
+          "weight": 0.8,
+          "evidence_level": "Medium-Low",
+          "preparation_method": "Mash the pulp of ripe Bael fruit, apply to irritated skin patch, let sit for 15 minutes, wash off."
+        },
+        {
+          "herb": "Bahera",
+          "efficacy": 76,
+          "weight": 0.79,
+          "evidence_level": "Medium",
+          "preparation_method": "Mix Bahera powder with warm water, apply as a paste on inflamed or swollen skin patches."
+        },
+        {
+          "herb": "Harra",
+          "efficacy": 75,
+          "weight": 0.78,
+          "evidence_level": "Medium",
+          "preparation_method": "Make a fine paste of Harra powder with water and apply as a spot treatment on minor wounds or rashes."
+        }
+      ]
+    },
+    {
+      "id": "infestations_bites",
+      "label": "Infestations & Bites",
+      "training_images": 584,
+      "remedies": []
+    },
+    {
+      "id": "lichen",
+      "label": "Lichenoid Disorders",
+      "training_images": 614,
+      "remedies": []
+    },
+    {
+      "id": "lupus",
+      "label": "Lupus (Cutaneous)",
+      "training_images": 345,
+      "remedies": []
+    },
+    {
+      "id": "moles",
+      "label": "Moles / Nevi",
+      "training_images": 401,
+      "remedies": []
+    },
+    {
+      "id": "psoriasis",
+      "label": "Psoriasis",
+      "training_images": 700,
+      "remedies": [
+        {
+          "herb": "Karanj",
+          "efficacy": 90,
+          "weight": 0.92,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Dilute Karanj oil with neem oil or coconut oil in a 1:5 ratio and apply to affected patches."
+        },
+        {
+          "herb": "Giloy",
+          "efficacy": 88,
+          "weight": 0.9,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Boil Giloy stems in water to prepare a decoction, let it cool, and wash the affected skin areas."
+        },
+        {
+          "herb": "Neem",
+          "efficacy": 80,
+          "weight": 0.82,
+          "evidence_level": "High (Multiple Clinical Trials)",
+          "preparation_method": "Grind fresh neem leaves with water to form a paste and apply to affected areas, or dilute neem oil (2-3 drops) in coconut oil."
+        }
+      ]
+    },
+    {
+      "id": "rosacea",
+      "label": "Rosacea",
+      "training_images": 582,
+      "remedies": [
+        {
+          "herb": "Aloe Vera",
+          "efficacy": 90,
+          "weight": 0.92,
+          "evidence_level": "High (Widely Researched)",
+          "preparation_method": "Extract fresh gel from an Aloe leaf and apply directly to the skin. No dilution required."
+        },
+        {
+          "herb": "Turmeric",
+          "efficacy": 85,
+          "weight": 0.88,
+          "evidence_level": "High (Strong Evidence)",
+          "preparation_method": "Mix 1/2 teaspoon of turmeric powder with yogurt or honey to form a paste. Apply for 10-15 minutes and rinse."
+        },
+        {
+          "herb": "Giloy",
+          "efficacy": 82,
+          "weight": 0.84,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Boil Giloy stems in water to prepare a decoction, let it cool, and wash the affected skin areas."
+        },
+        {
+          "herb": "Neem",
+          "efficacy": 78,
+          "weight": 0.8,
+          "evidence_level": "High (Multiple Clinical Trials)",
+          "preparation_method": "Grind fresh neem leaves with water to form a paste and apply to affected areas, or dilute neem oil (2-3 drops) in coconut oil."
+        }
+      ]
+    },
+    {
+      "id": "seborrh_keratoses",
+      "label": "Seborrheic Keratoses",
+      "training_images": 700,
+      "remedies": []
+    },
+    {
+      "id": "skincancer",
+      "label": "Skin Cancer",
+      "training_images": 700,
+      "remedies": []
+    },
+    {
+      "id": "sun_sunlight_damage",
+      "label": "Sun / Sunlight Damage",
+      "training_images": 700,
+      "remedies": []
+    },
+    {
+      "id": "tinea",
+      "label": "Tinea (Fungal)",
+      "training_images": 695,
+      "remedies": [
+        {
+          "herb": "Karanj",
+          "efficacy": 94,
+          "weight": 0.95,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Dilute Karanj oil with neem oil or coconut oil in a 1:5 ratio and apply to affected patches."
+        },
+        {
+          "herb": "Neem",
+          "efficacy": 90,
+          "weight": 0.92,
+          "evidence_level": "High (Multiple Clinical Trials)",
+          "preparation_method": "Grind fresh neem leaves with water to form a paste and apply to affected areas, or dilute neem oil (2-3 drops) in coconut oil."
+        },
+        {
+          "herb": "Harra",
+          "efficacy": 82,
+          "weight": 0.84,
+          "evidence_level": "Medium",
+          "preparation_method": "Make a fine paste of Harra powder with water and apply as a spot treatment on minor wounds or rashes."
+        },
+        {
+          "herb": "Tulsi",
+          "efficacy": 80,
+          "weight": 0.85,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Crush tulsi leaves and extract the juice. Apply this juice directly using a cotton ball to acne lesions."
+        }
+      ]
+    },
+    {
+      "id": "unknown_normal",
+      "label": "Unknown / Normal",
+      "training_images": 700,
+      "remedies": [
+        {
+          "herb": "Aloe Vera",
+          "efficacy": 95,
+          "weight": 0.96,
+          "evidence_level": "High (Widely Researched)",
+          "preparation_method": "Extract fresh gel from an Aloe leaf and apply directly to the skin. No dilution required."
+        },
+        {
+          "herb": "Moringa",
+          "efficacy": 92,
+          "weight": 0.93,
+          "evidence_level": "High",
+          "preparation_method": "Apply cold-pressed Moringa seed oil as a moisturizer or face oil, or make a leaf powder paste."
+        },
+        {
+          "herb": "Amla",
+          "efficacy": 90,
+          "weight": 0.92,
+          "evidence_level": "Medium (Strong Antioxidant Action)",
+          "preparation_method": "Mix amla powder with raw honey or rose water, apply as a mask for 10 minutes, then wash off."
+        },
+        {
+          "herb": "Hibiscus",
+          "efficacy": 90,
+          "weight": 0.91,
+          "evidence_level": "Medium",
+          "preparation_method": "Crush fresh hibiscus petals with a little yogurt, apply to face for 15 minutes, then rinse with warm water."
+        },
+        {
+          "herb": "Ashwagandha",
+          "efficacy": 88,
+          "weight": 0.9,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Mix Ashwagandha root powder with ghee or honey and apply to areas showing fine lines or fatigue."
+        },
+        {
+          "herb": "Tulsi",
+          "efficacy": 85,
+          "weight": 0.88,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Crush tulsi leaves and extract the juice. Apply this juice directly using a cotton ball to acne lesions."
+        },
+        {
+          "herb": "Arjun",
+          "efficacy": 85,
+          "weight": 0.86,
+          "evidence_level": "Medium",
+          "preparation_method": "Mix Arjun bark powder with honey and milk to make a skin paste. Apply twice a week."
+        },
+        {
+          "herb": "Bhringraj",
+          "efficacy": 85,
+          "weight": 0.87,
+          "evidence_level": "Medium-High",
+          "preparation_method": "Extract juice from crushed fresh Bhringraj leaves and apply to wounds, or apply Bhringraj leaf powder paste."
+        }
+      ]
+    },
+    {
+      "id": "vascular_tumors",
+      "label": "Vascular Tumors",
+      "training_images": 700,
+      "remedies": []
+    },
+    {
+      "id": "vasculitis",
+      "label": "Vasculitis",
+      "training_images": 513,
+      "remedies": []
+    },
+    {
+      "id": "vitiligo",
+      "label": "Vitiligo",
+      "training_images": 699,
+      "remedies": [
+        {
+          "herb": "Turmeric",
+          "efficacy": 75,
+          "weight": 0.78,
+          "evidence_level": "High (Strong Evidence)",
+          "preparation_method": "Mix 1/2 teaspoon of turmeric powder with yogurt or honey to form a paste. Apply for 10-15 minutes and rinse."
+        }
+      ]
+    },
+    {
+      "id": "warts",
+      "label": "Warts",
+      "training_images": 644,
+      "remedies": []
+    }
+  ]
+}
